@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: login
+  labels:
+    app: login
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: login
+      version: blue     # initial version
+  template:
+    metadata:
+      labels:
+        app: login
+        version: blue
+    spec:
+      containers:
+      - name: login
+        image: REPLACE_LOGIN_IMAGE   # to be patched by overlays or CI
+        ports:
+        - containerPort: 3000

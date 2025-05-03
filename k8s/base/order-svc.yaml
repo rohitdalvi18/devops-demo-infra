@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: order
+spec:
+  type: LoadBalancer
+  selector:
+    app: order
+    version: blue        # traffic goes to “blue” initially
+  ports:
+  - port: 80
+    targetPort: 3000

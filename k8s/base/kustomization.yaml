@@ -1,0 +1,9 @@
+resources:
+  - login-deploy.yaml
+  - login-svc.yaml
+  - order-deploy.yaml
+  - order-svc.yaml
+  - inventory-deploy.yaml
+  - inventory-svc.yaml
+  - frontend-deploy.yaml        # new
+  - frontend-svc.yaml           # new
