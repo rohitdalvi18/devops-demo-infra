@@ -113,7 +113,7 @@ jobs:
           kubectl version --client
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
+        run: aws eks update-kubeconfig --region us-west-2 --name ${CLUSTER_NAME}
 
       - name: Patch images in k8s manifests
         run: |
