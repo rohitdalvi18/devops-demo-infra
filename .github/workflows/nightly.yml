@@ -36,8 +36,14 @@ jobs:
             aws-region:            us-east-1
         
 
-      - name: Login to ECR
-        uses: aws-actions/amazon-ecr-login@v1
+      - name: Login to Amazon ECR
+        run: |
+            aws ecr get-login-password \
+            --region ${{ env.AWS_REGION }} \
+            | docker login \
+            --username AWS \
+            --password-stdin ${{ env.ECR_REGISTRY }}
+    
 
       - name: Build & push login-service
         run: |
