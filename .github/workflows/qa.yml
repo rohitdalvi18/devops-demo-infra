@@ -16,6 +16,7 @@ env:
 
 jobs:
   smoke-tests:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Run Basic QA Tests
     runs-on: ubuntu-latest
     steps:
@@ -67,6 +68,7 @@ jobs:
   deploy-qa:
     name: Deploy to QA
     needs: smoke-tests
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS credentials
