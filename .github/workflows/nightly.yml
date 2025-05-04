@@ -104,9 +104,13 @@ jobs:
             aws-region:            us-east-1
 
       - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: '1.32.0'
+        run: |
+          KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+          echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+          curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
