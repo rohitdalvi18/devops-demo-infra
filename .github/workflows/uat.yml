@@ -7,6 +7,11 @@ on:
   # allow manual re-runs if needed
   workflow_dispatch:
 
+# Grant rights to create & comment on issues
+permissions:
+    contents: read
+    issues: write
+
 env:
   AWS_REGION:     us-east-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -24,12 +29,12 @@ jobs:
       - name: Pause for manual approval 🛑
         uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ github.token }}
+          secret: ${{ secrets.GH_token }}
           approvers: rgdalvi            # GitHub username of the approver
           minimum-approvals: 1
           issue-title: "Approve UAT Deployment"
           issue-body: |
-            The QA pipeline has completed successfully and is ready for UAT promotion.
+            QA pipeline has passed and awaits promotion to UAT
 
             • You can view QA pipeline run details:  
               ${{ github.event.workflow_run.html_url }}
