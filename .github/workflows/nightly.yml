@@ -41,11 +41,7 @@ jobs:
 
       - name: Login to Amazon ECR
         run: |
-            aws ecr get-login-password \
-            --region ${{ env.AWS_REGION }} \
-            | docker login \
-            --username AWS \
-            --password-stdin ${{ env.ECR_REGISTRY }}
+          aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
     
 
       - name: Build & push login-service
