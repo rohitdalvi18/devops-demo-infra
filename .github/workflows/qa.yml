@@ -1,0 +1,101 @@
+name: QA Pipeline
+
+# Trigger when the Nightly workflow completes successfully
+on:
+  workflow_run:
+    workflows: ["Nightly Build & Deploy"]
+    types: [completed]
+
+env:
+  AWS_REGION: us-west-2
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_DEFAULT_REGION: us-west-2
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  CLUSTER_NAME: devops-demo
+  IMAGE_TAG: nightly-${{ github.event.workflow_run.run_number }}
+
+jobs:
+  smoke-tests:
+    name: Run Basic QA Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }} 
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        run: |
+          KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+          echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+          curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-west-2 --name ${CLUSTER_NAME}
+
+      - name: Wait for Nightly Services
+        run: |
+          kubectl rollout status deploy/login     -n nightly --timeout=120s
+          kubectl rollout status deploy/order     -n nightly --timeout=120s
+          kubectl rollout status deploy/inventory -n nightly --timeout=120s
+          kubectl rollout status deploy/frontend  -n nightly --timeout=120s
+
+      - name: Test login-service
+        run: |
+          RESULT=$(curl -s "http://$(kubectl get svc frontend -n nightly -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')/login?user=admin&pass=password")
+          echo "Login Test returned: $RESULT"
+          test "$RESULT" = '{"authenticated":true}'
+
+      - name: Test order-service
+        run: |
+          DATA=$(curl -s "http://$(kubectl get svc frontend -n nightly -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')/orders")
+          echo "Orders returned: $DATA"
+          echo "$DATA" | grep -q '"id":1'
+
+      - name: Test inventory-service
+        run: |
+          DATA=$(curl -s "http://$(kubectl get svc frontend -n nightly -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')/inventory")
+          echo "Inventory returned: $DATA"
+          echo "$DATA" | grep -q '"sku"'
+
+  deploy-qa:
+    name: Deploy to QA
+    needs: smoke-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }} 
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        run: |
+          KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+          echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+          curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Update kubeconfig
+        run: |
+          run: aws eks update-kubeconfig --region us-west-2 --name ${CLUSTER_NAME}
+
+      - name: Apply QA overlay
+        run: kubectl apply -k k8s/overlays/qa
+
+      - name: Wait for QA rollouts
+        run: |
+          kubectl rollout status deploy/login     -n qa --timeout=120s
+          kubectl rollout status deploy/order     -n qa --timeout=120s
+          kubectl rollout status deploy/inventory -n qa --timeout=120s
+          kubectl rollout status deploy/frontend  -n qa --timeout=120s
