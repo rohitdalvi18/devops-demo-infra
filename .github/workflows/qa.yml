@@ -18,7 +18,7 @@ env:
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
   IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag || format('nightly-{0}', github.event.workflow_run.run_number) }}
-  
+
 jobs:
   deploy-qa:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
@@ -45,6 +45,14 @@ jobs:
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+
+      - name: Patch images in base manifests
+        run: |
+          # replace placeholders with real ECR images and the nightly tag
+          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-deploy.yaml
+          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-deploy.yaml
+          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-deploy.yaml
+          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-deploy.yaml
 
       - name: Deploy to QA
         run: kubectl apply -k k8s/overlays/qa
