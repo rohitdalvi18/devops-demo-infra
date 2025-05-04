@@ -5,6 +5,10 @@ on:
     workflows: ["Nightly Build & Deploy"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'ECR Image Tag (e.g., nightly-42)'
+        required: true
 
 
 env:
@@ -13,8 +17,8 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
-  IMAGE_TAG:      qa-${{ github.run_number }}
-
+  IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag || format('nightly-{0}', github.event.workflow_run.run_number) }}
+  
 jobs:
   deploy-qa:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
