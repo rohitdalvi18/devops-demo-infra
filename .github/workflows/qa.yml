@@ -4,6 +4,8 @@ on:
   workflow_run:
     workflows: ["Nightly Build & Deploy"]
     types: [completed]
+  workflow_dispatch:
+
 
 env:
   AWS_REGION:     us-east-1
