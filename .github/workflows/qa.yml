@@ -7,9 +7,9 @@ on:
     types: [completed]
 
 env:
-  AWS_REGION: us-west-2
+  AWS_REGION: us-east-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  AWS_DEFAULT_REGION: us-west-2
+  AWS_DEFAULT_REGION: us-east-1
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME: devops-demo
   IMAGE_TAG: nightly-${{ github.event.workflow_run.run_number }}
@@ -38,7 +38,7 @@ jobs:
           kubectl version --client
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region us-west-2 --name ${CLUSTER_NAME}
+        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
       - name: Wait for Nightly Services
         run: |
@@ -90,7 +90,7 @@ jobs:
 
       - name: Update kubeconfig
         run: |
-          run: aws eks update-kubeconfig --region us-west-2 --name ${CLUSTER_NAME}
+          run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
       - name: Apply QA overlay
         run: kubectl apply -k k8s/overlays/qa
