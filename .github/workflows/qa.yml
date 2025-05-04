@@ -145,18 +145,33 @@ jobs:
           exit 1
       - name: Test login-service
         run: |
-          RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password")
-          echo "Login returned: $RESULT"
-          echo "$RESULT" | grep -q 'Authenticated: true'
+          TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password")
+          echo "Login test for admin returned: $TEST_RESULT"
+          if echo "$TEST_RESULT" | grep -q 'Authenticated: true'; then
+            echo "✅ Login test successful!"
+          else
+            echo "❌ Login test failed!"
+            exit 1
+          fi
 
       - name: Test order-service
         run: |
-          DATA=$(curl -s "http://${HOST}/orders")
-          echo "Orders returned: $DATA"
-          echo "$DATA" | grep -q '"id":1'
+          TEST_ORDERS=$(curl -s "http://${HOST}/orders?q=json")
+          echo "Orders-service test returned data: $TEST_ORDERS"
+          if echo "$TEST_ORDERS" | grep -q '{ id:1, item:"Apple" }'; then
+            echo "✅ Orders-service test successful!"
+          else
+            echo "❌ Orders-service test failed!"
+            exit 1
+          fi
 
       - name: Test inventory-service
         run: |
-          DATA=$(curl -s "http://${HOST}/inventory")
-          echo "Inventory returned: $DATA"
-          echo "$DATA" | grep -q '"sku"'
+          INVENTORY_DATA=$(curl -s "http://${HOST}/inventory?q=json")
+          echo "Inventory-service test returned data: $INVENTORY_DATA"
+          if echo "$INVENTORY_DATA" | grep -q '{ sku:"Apple", qty:100 }'; then
+            echo "✅ Inventory-service test successful!"
+          else
+            echo "❌ Inventory-service test failed!"
+            exit 1
+          fi
