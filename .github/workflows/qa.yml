@@ -11,7 +11,7 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
-  IMAGE_TAG:      nightly-${{ github.event.workflow_run.run_number }}
+  IMAGE_TAG:      qa-${{ github.run_number }}
 
 jobs:
   deploy-qa:
