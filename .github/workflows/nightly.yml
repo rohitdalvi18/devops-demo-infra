@@ -123,6 +123,10 @@ jobs:
           sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-deploy.yaml
           sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-deploy.yaml
 
+      - name: Create namespace
+        run: |
+          kubectl create namespace nightly || echo "Namespace already exists"
+          
       - name: Apply Nightly overlay
         run: kubectl apply -k k8s/overlays/nightly
 

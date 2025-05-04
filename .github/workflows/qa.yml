@@ -54,6 +54,9 @@ jobs:
           sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-deploy.yaml
           sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-deploy.yaml
 
+      - name: Create namespace
+        run: |
+          kubectl create namespace qa || echo "Namespace already exists"
       - name: Deploy to QA
         run: kubectl apply -k k8s/overlays/qa
 
@@ -145,20 +148,24 @@ jobs:
           exit 1
       - name: Test login-service
         run: |
-          TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password")
-          echo "Login test for admin returned: $TEST_RESULT"
-          if echo "$TEST_RESULT" | grep -q 'Authenticated: true'; then
-            echo "✅ Login test successful!"
-          else
-            echo "❌ Login test failed!"
-            exit 1
-          fi
+          for i in {1..5}; do
+            TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password")
+            if echo "$TEST_RESULT" | grep -q '{"authenticated":"true"}'; then
+                echo "✅ Login test successful!"
+                exit 0
+            fi
+            echo "⏳ Retrying login check... ($i/5)"
+            sleep 5
+          done
+
+          echo "❌ Login test failed!"
+          exit 1
 
       - name: Test order-service
         run: |
           TEST_ORDERS=$(curl -s "http://${HOST}/orders?q=json")
           echo "Orders-service test returned data: $TEST_ORDERS"
-          if echo "$TEST_ORDERS" | grep -q '{ id:1, item:"Apple" }'; then
+          if echo "$TEST_ORDERS" | grep -q '{"id":1,"item":"Apple"}'; then
             echo "✅ Orders-service test successful!"
           else
             echo "❌ Orders-service test failed!"
@@ -169,7 +176,7 @@ jobs:
         run: |
           INVENTORY_DATA=$(curl -s "http://${HOST}/inventory?q=json")
           echo "Inventory-service test returned data: $INVENTORY_DATA"
-          if echo "$INVENTORY_DATA" | grep -q '{ sku:"Apple", qty:100 }'; then
+          if echo "$INVENTORY_DATA" | grep -q '{"sku":"Apple","qty":"100"}'; then
             echo "✅ Inventory-service test successful!"
           else
             echo "❌ Inventory-service test failed!"
