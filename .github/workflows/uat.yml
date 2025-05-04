@@ -18,7 +18,7 @@ env:
 jobs:
   await-approval:
     # only run when QA succeeded
-    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # sws if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Pause for manual approval 🛑
@@ -31,11 +31,8 @@ jobs:
           issue-body: |
             The QA pipeline has completed successfully and is ready for UAT promotion.
 
-            • QA run details:  
+            • You can view QA pipeline run details:  
               ${{ github.event.workflow_run.html_url }}
-
-            • Nightly run details (from QA context):  
-              ${{ fromJson(github.event.workflow_run.workflow_run.previous_run).html_url || 'N/A' }}
 
             🟢 Please comment "approved" or "lgtm" or "yes" to continue!  
             
