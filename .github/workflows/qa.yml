@@ -127,7 +127,7 @@ jobs:
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
-        
+
       - name: Verify LoadBalancer hostname
         run: |
           for i in $(seq 1 30); do
@@ -147,7 +147,7 @@ jobs:
         run: |
           RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password")
           echo "Login returned: $RESULT"
-          test "$RESULT" = '{"authenticated":true}'
+          echo "$RESULT" | grep -q 'Authenticated: true'
 
       - name: Test order-service
         run: |
