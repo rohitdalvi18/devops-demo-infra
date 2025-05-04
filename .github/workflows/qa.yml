@@ -57,7 +57,7 @@ jobs:
       - name: Create namespace
         run: |
           kubectl create namespace qa || echo "Namespace already exists"
-          
+
       - name: Deploy to QA
         run: kubectl apply -k k8s/overlays/qa
 
@@ -147,6 +147,7 @@ jobs:
           done
           echo "ERROR: ELB hostname not ready" >&2
           exit 1
+          
       - name: Test login-service
         run: |
           for i in {1..5}; do
