@@ -110,7 +110,7 @@ jobs:
     steps:
       - name: Test login-service
         run: |
-          RESULT=$(curl -s "http://${{env.HOST}}/login?user=admin&pass=password")
+          RESULT=$(curl -s "http://${{ env.HOST }}/login?user=admin&pass=password")
           echo "Login returned: $RESULT"
           test "$RESULT" = '{"authenticated":true}'
 
