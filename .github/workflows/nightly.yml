@@ -43,6 +43,10 @@ jobs:
         run: |
           aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
     
+      - name: Create login-service repo if not exists
+        run: |
+          aws ecr describe-repositories --repository-names "login-service" || \
+          aws ecr create-repository --repository-name "login-service"
 
       - name: Build & push login-service
         run: |
@@ -50,17 +54,32 @@ jobs:
           docker tag login-service:${IMAGE_TAG} ${ECR_REGISTRY}/login-service:${IMAGE_TAG}
           docker push ${ECR_REGISTRY}/login-service:${IMAGE_TAG}
 
+      - name: Create order-service repo if not exists
+        run: |
+          aws ecr describe-repositories --repository-names "order-service" || \
+          aws ecr create-repository --repository-name "order-service"
+
       - name: Build & push order-service
         run: |
           docker build -t order-service:${IMAGE_TAG} source/order-service
           docker tag order-service:${IMAGE_TAG} ${ECR_REGISTRY}/order-service:${IMAGE_TAG}
           docker push ${ECR_REGISTRY}/order-service:${IMAGE_TAG}
 
+      - name: Create inventory-service repo if not exists
+        run: |
+          aws ecr describe-repositories --repository-names "inventory-service" || \
+          aws ecr create-repository --repository-name "inventory-service"
+
       - name: Build & push inventory-service
         run: |
           docker build -t inventory-service:${IMAGE_TAG} source/inventory-service
           docker tag inventory-service:${IMAGE_TAG} ${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}
           docker push ${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}
+
+      - name: Create frontend-service repo if not exists
+        run: |
+          aws ecr describe-repositories --repository-names "frontend-service" || \
+          aws ecr create-repository --repository-name "frontend-service"
 
       - name: Build & push frontend-service
         run: |
@@ -85,7 +104,7 @@ jobs:
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: '1.27.0'
+          version: '1.32.0'
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
