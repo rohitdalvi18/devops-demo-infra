@@ -110,18 +110,18 @@ jobs:
     steps:
       - name: Test login-service
         run: |
-          RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password")
+          RESULT=$(curl -s "http://${{env.HOST}}/login?user=admin&pass=password")
           echo "Login returned: $RESULT"
           test "$RESULT" = '{"authenticated":true}'
 
       - name: Test order-service
         run: |
-          DATA=$(curl -s "http://${HOST}/orders")
+          DATA=$(curl -s "http://${{env.HOST}}/orders")
           echo "Orders returned: $DATA"
           echo "$DATA" | grep -q '"id":1'
 
       - name: Test inventory-service
         run: |
-          DATA=$(curl -s "http://${HOST}/inventory")
+          DATA=$(curl -s "http://${{env.HOST}}/inventory")
           echo "Inventory returned: $DATA"
           echo "$DATA" | grep -q '"sku"'
