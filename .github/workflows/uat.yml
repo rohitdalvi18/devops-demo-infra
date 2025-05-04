@@ -78,7 +78,7 @@ jobs:
 
       - name: Create namespace
         run: |
-          kubectl create namespace qa || echo "Namespace already exists"
+          kubectl create namespace uat || echo "Namespace already exists"
 
       - name: Deploy to UAT namespace
         run: kubectl apply -k k8s/overlays/uat
@@ -105,4 +105,9 @@ jobs:
       - name: UAT TEST - Inventory Visibility Test
         run: |
           curl -f "http://$HOST/inventory"
+
+      - name: Cleanup UAT namespace
+        run: |
+            kubectl delete namespace uat                    
+            kubectl wait --for=delete namespace uat --timeout=200s
 

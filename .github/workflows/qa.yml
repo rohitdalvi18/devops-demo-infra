@@ -147,7 +147,7 @@ jobs:
           done
           echo "ERROR: ELB hostname not ready" >&2
           exit 1
-          
+
       - name: Test login-service
         run: |
           for i in {1..5}; do
@@ -185,3 +185,8 @@ jobs:
             echo "❌ Inventory-service test failed!"
             exit 1
           fi
+
+      - name: Cleanup QA namespace
+        run: |
+            kubectl delete namespace qa                    
+            kubectl wait --for=delete namespace qa --timeout=200s

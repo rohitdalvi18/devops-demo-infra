@@ -136,3 +136,8 @@ jobs:
           kubectl rollout status deploy/order     -n nightly --timeout=120s
           kubectl rollout status deploy/inventory -n nightly --timeout=120s
           kubectl rollout status deploy/frontend  -n nightly --timeout=120s
+
+      - name: Cleanup Nightly namespace
+        run: |
+          kubectl delete namespace nightly                    
+          kubectl wait --for=delete namespace nightly --timeout=200s
