@@ -149,7 +149,8 @@ jobs:
       - name: Test login-service
         run: |
           for i in {1..5}; do
-            TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password")
+            TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password&q=json")
+            echo "Login test returned data: $TEST_RESULT"
             if echo "$TEST_RESULT" | grep -q '{"authenticated":"true"}'; then
                 echo "✅ Login test successful!"
                 exit 0
