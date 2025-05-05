@@ -199,6 +199,7 @@ jobs:
       - name: Check image tag
         run: | 
             echo "Deploying image: $IMAGE_TAG"
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
       
       - name: Trigger UAT workflow
         uses: peter-evans/repository-dispatch@v3
@@ -207,6 +208,6 @@ jobs:
           repository: ${{ github.repository }}             
           event-type: trigger-uat                          
           client-payload: |
-            {"image_tag":"${IMAGE_TAG}"}           # pass inputs as JSON
+            {"image_tag": "${{ env.IMAGE_TAG }}"}           # pass inputs as JSON
       
             
