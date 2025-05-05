@@ -7,7 +7,7 @@ on:
         description: 'Docker image tag to deploy (e.g. nightly-42)'
         required: true
   repository_dispatch:
-    types: [Green Promotion Pipeline]
+    types: [Promote Green to Blue]
 
 env:
   AWS_REGION:     us-east-1
@@ -31,11 +31,11 @@ jobs:
             issue-body: |
                 ✅ QA pipeline succeeded and the green deployment is healthy.
 
-                This step will promote the green image `${IMAGE_TAG}` to the blue environment (production traffic).
+                This step will promote the green image $IMAGE_TAG to the blue environment (production traffic).
 
                 🔄 This involves:
                 • Updating service selectors to point to the new blue pods
-                • Redeploying with the same image tag: `${IMAGE_TAG}`
+                • Redeploying with the same image tag: $IMAGE_TAG
 
                 📄 QA Pipeline Details:  
                 ${{ github.event.workflow_run.html_url }}
@@ -45,6 +45,7 @@ jobs:
 
   switch-to-blue:
     name: Promote Green to Blue
+    needs: await-approval
     runs-on: ubuntu-latest
     steps:
       - name: Checkout infra repo
