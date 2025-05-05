@@ -15,46 +15,12 @@ env:
   IMAGE_TAG:      ${{ github.event.inputs.image_tag }}
 
 jobs:
-  build-push:
+
+  deploy-green:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout infra repo
         uses: actions/checkout@v3
-
-      - name: Checkout source repo
-        uses: actions/checkout@v3
-        with:
-          repository: rohitdalvi18/devops-demo-source
-          path: source
-          token: ${{ secrets.GH_TOKEN }}
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-          aws-region:            us-east-1
-
-      - name: Login to ECR
-        run: |
-          aws ecr get-login-password --region $AWS_REGION \
-            | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-      - name: Build & Push All Services
-        run: |
-          for svc in login-service order-service inventory-service frontend-service; do
-            docker build -t $svc:$IMAGE_TAG source/${svc} 
-            docker tag $svc:$IMAGE_TAG $ECR_REGISTRY/$svc:$IMAGE_TAG
-            docker push $ECR_REGISTRY/$svc:$IMAGE_TAG
-            echo "✅ Pushed $ECR_REGISTRY/$svc:$IMAGE_TAG"
-          done
-
-  deploy-green:
-    needs: build-push
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4

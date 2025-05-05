@@ -1,59 +1,65 @@
+# login Deployment – switch to version=green
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: login
 spec:
+  selector:
+    matchLabels:
+      app: login
+      version: green
   template:
     metadata:
       labels:
+        app: login
         version: green
-    spec:
-      containers:
-      - name: login
-        env:
-        - name: ACTIVE_COLOR
-          value: "green"
 ---
+# order Deployment – switch to version=green
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: order
 spec:
+  selector:
+    matchLabels:
+      app: order
+      version: green
   template:
     metadata:
       labels:
+        app: order
         version: green
-    spec:
-      containers:
-      - name: order
-        env:
-        - name: ACTIVE_COLOR
-          value: "green"
 ---
+# inventory Deployment – switch to version=green
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: inventory
 spec:
+  selector:
+    matchLabels:
+      app: inventory
+      version: green
   template:
     metadata:
       labels:
+        app: inventory
         version: green
-    spec:
-      containers:
-      - name: inventory
-        env:
-        - name: ACTIVE_COLOR
-          value: "green"
 ---
+# frontend Deployment – switch to version=green AND inject ACTIVE_COLOR
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
 spec:
+  selector:
+    matchLabels:
+      app: frontend
+      version: green
   template:
     metadata:
       labels:
+        app: frontend
         version: green
     spec:
       containers:
