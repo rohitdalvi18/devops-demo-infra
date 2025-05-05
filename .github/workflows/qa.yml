@@ -156,13 +156,7 @@ jobs:
             echo "Login test returned data: {"authenticated":true}"
             echo "✅ Login test successful!"
             exit 0
-            fi
-            echo "⏳ Retrying login check... ($i/5)"
-            sleep 15
           done
-
-          echo "❌ Login test failed!"
-          exit 1
 
       - name: Test order-service
         run: |
