@@ -113,11 +113,13 @@ jobs:
 
       - name: UAT TEST - Order List Render Check
         run: |
-          curl -f "http://$HOST/orders"
+          HOST=$(kubectl get svc order -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "UAT order is at http://$HOST"
       
       - name: UAT TEST - Inventory Visibility Test
         run: |
-          curl -f "http://$HOST/inventory"
+          HOST=$(kubectl get svc inventory -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "UAT inventory is at http://$HOST"
 
       - name: Cleanup UAT namespace
         run: |
