@@ -2,12 +2,16 @@ name: Promote Green to Blue
 
 on:
   workflow_dispatch:
-
+    inputs:
+        image_tag:
+          description: 'Docker image tag to deploy (e.g. nightly-42)'
+          required: true
 env:
   AWS_REGION:     us-east-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
+  IMAGE_TAG:      ${{ github.event.inputs.image_tag }}
 
 jobs:
   switch-to-blue:
@@ -47,7 +51,7 @@ jobs:
             k8s/base/inventory-blue-deploy.yaml
           sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" \
             k8s/base/frontend-blue-deploy.yaml
-            
+
       - name: Apply Blue Overlay
         run: kubectl apply -k k8s/overlays/prod/blue
 
