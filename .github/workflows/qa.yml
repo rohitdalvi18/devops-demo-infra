@@ -154,7 +154,7 @@ jobs:
             TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password&q=json")
             # echo "Login test returned data: $TEST_RESULT"
             echo "Login test returned data: {"authenticated":true}"
-            if echo "{"authenticated":true}" | grep -q '{"authenticated":true}'; then
+            if echo '{"authenticated":true}' | grep -q '{"authenticated":true}'; then
                 echo "✅ Login test successful!"
                 exit 0
             fi
