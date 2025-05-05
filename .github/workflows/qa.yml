@@ -200,12 +200,12 @@ jobs:
             echo "Deploying image: $IMAGE_TAG"
             echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
       
-      - name: Trigger UAT workflow
+      - name: Trigger UAT pipeline
         uses: peter-evans/repository-dispatch@v3
         with:
           token:      ${{ secrets.GH_TOKEN }}                 
           repository: ${{ github.repository }}             
-          event-type: trigger-uat                      
+          event-type: UAT Pipeline                     
           client-payload: '{"image_tag":"${{ env.IMAGE_TAG }}"}'
       
             

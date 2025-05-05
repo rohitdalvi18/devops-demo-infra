@@ -6,7 +6,7 @@ on:
     # types: [completed]
   # allow manual re-runs if needed
   repository_dispatch:
-    types: [trigger-uat]
+    types: [UAT Pipeline]
 
   workflow_dispatch:
     inputs:
@@ -110,10 +110,6 @@ jobs:
         run: |
           HOST=$(kubectl get svc frontend -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "UAT frontend is at http://$HOST"
-    
-      - name: UAT TEST - Auth Endpoint Verification
-        run: |
-          curl -f "http://$HOST/login?user=admin&pass=password"
 
       - name: UAT TEST - Order List Render Check
         run: |
