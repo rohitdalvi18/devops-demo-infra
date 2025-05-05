@@ -5,7 +5,7 @@ kind: Kustomization
 
 namespace: prod
 resources:
-  - ../../base
+  - ../../../base
 
 patchesStrategicMerge:
   - deploy-green-patch.yaml
