@@ -5,6 +5,9 @@ on:
     # workflows: ["QA Pipeline"]
     # types: [completed]
   # allow manual re-runs if needed
+  repository_dispatch:
+    types: [trigger-uat]
+
   workflow_dispatch:
     inputs:
         image_tag:
@@ -22,7 +25,7 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
-  IMAGE_TAG:      ${{ github.event.inputs.image_tag }}
+  IMAGE_TAG:      ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
 
 jobs:
   verify-image-tag:
