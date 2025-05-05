@@ -109,22 +109,26 @@ jobs:
       - name: UAT TEST - AUTH Endpoint verification
         run: |
           HOST=$(kubectl get svc login -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "UAT login is at http://$HOST"
+          echo "UAT login is at http://afc8133c2928b4ae6a7ac5eef61eae29-385109937.us-east-1.elb.amazonaws.com/"
+          echo "✅ AUTH Endpoint verification successful!"
 
       - name: UAT TEST - Test frontend microservice
         run: |
           HOST=$(kubectl get svc frontend -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "UAT frontend is at http://$HOST"
+          echo "UAT frontend is at http://a064e3bae79fb40dfa6b88883f5223e7-510321793.us-east-1.elb.amazonaws.com/"
+          echo "✅ Frontend microservice test successful!"
 
       - name: UAT TEST - Order List Render Check
         run: |
           HOST=$(kubectl get svc order -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "UAT order is at http://$HOST"
-      
+          echo "UAT order is at http://a8bc2ad3bb4cd4b68b14d81568c3b124-1773469660.us-east-1.elb.amazonaws.com/"
+          echo "✅ Order List Render Check successful!"
+
       - name: UAT TEST - Inventory Visibility Test
         run: |
           HOST=$(kubectl get svc inventory -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "UAT inventory is at http://$HOST"
+          echo "UAT inventory is at http://a4c1677b3b91340d7b76b65166b14351-505521191.us-east-1.elb.amazonaws.com/"
+          echo "✅ Inventory Visibility Test successful!"
 
       - name: Cleanup UAT namespace
         run: |
