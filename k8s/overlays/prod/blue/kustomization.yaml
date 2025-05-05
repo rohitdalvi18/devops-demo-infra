@@ -8,7 +8,7 @@ namespace: prod
 resources:
   - ../../../base
 
-patches:
+patchesStrategicMerge:
   - deploy-blue-patch.yaml
   - svc-selector-blue.yaml
 
