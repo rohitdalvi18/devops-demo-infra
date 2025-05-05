@@ -18,7 +18,7 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
-  IMAGE_TAG:      ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag || format('nightly-{0}', github.event.workflow_run.run_number) }}
+  IMAGE_TAG:      ${{ github.event.inputs.image_tag }}
 
 jobs:
   verify-image-tag:
@@ -30,6 +30,7 @@ jobs:
 
   await-approval:
     # only run when QA succeeded
+    needs: verify-image-tag
     # sws if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
@@ -42,6 +43,8 @@ jobs:
           issue-title: "Approve UAT Deployment"
           issue-body: |
             QA pipeline has passed and awaits promotion to UAT
+
+            Deploying image `${IMAGE_TAG}` to UAT.
 
             • You can view QA pipeline run details:  
               ${{ github.event.workflow_run.html_url }}
