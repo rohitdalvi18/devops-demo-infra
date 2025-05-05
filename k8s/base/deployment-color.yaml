@@ -1,0 +1,9 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend    # repeat for each service in separate patch files
+spec:
+  template:
+    metadata:
+      labels:
+        version: green   # or blue

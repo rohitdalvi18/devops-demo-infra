@@ -1,0 +1,89 @@
+name: Deploy to Green
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy (e.g. nightly-42)'
+        required: true
+
+env:
+  AWS_REGION:     us-east-1
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  CLUSTER_NAME:   devops-demo
+  IMAGE_TAG:      ${{ github.event.inputs.image_tag }}
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
+          aws-region:            us-east-1
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION \
+            | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+      - name: Build & Push All Services
+        run: |
+          for svc in login-service order-service inventory-service frontend-service; do
+            docker build -t $svc:$IMAGE_TAG source/${svc} 
+            docker tag $svc:$IMAGE_TAG $ECR_REGISTRY/$svc:$IMAGE_TAG
+            docker push $ECR_REGISTRY/$svc:$IMAGE_TAG
+          done
+
+  deploy-green:
+    needs: build-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
+          aws-region:            us-east-1
+
+      - name: Setup kubectl
+        run: |
+            KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+            echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+            curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+            chmod +x kubectl
+            sudo mv kubectl /usr/local/bin/
+            kubectl version --client
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+
+      - name: Patch Base Manifests for Green
+        run: |
+          sed -i "s|REPLACE_LOGIN_IMAGE|$ECR_REGISTRY/login-service:$IMAGE_TAG|g" k8s/base/login-deploy.yaml
+          sed -i "s|REPLACE_ORDER_IMAGE|$ECR_REGISTRY/order-service:$IMAGE_TAG|g" k8s/base/order-deploy.yaml
+          sed -i "s|REPLACE_INVENTORY_IMAGE|$ECR_REGISTRY/inventory-service:$IMAGE_TAG|g" k8s/base/inventory-deploy.yaml
+          sed -i "s|REPLACE_FRONTEND_IMAGE|$ECR_REGISTRY/frontend-service:$IMAGE_TAG|g" k8s/base/frontend-deploy.yaml
+
+      - name: Create namespace
+        run: |
+            kubectl create namespace prod || echo "Namespace prod exists"
+      
+      - name: Deploy Green Overlay
+        run: |
+          kubectl apply -k k8s/overlays/prod/green
+
+      - name: Wait for Green Rollout
+        run: |
+          for svc in login order inventory frontend; do
+            kubectl rollout status deployment/$svc -n prod --timeout=300s
+          done

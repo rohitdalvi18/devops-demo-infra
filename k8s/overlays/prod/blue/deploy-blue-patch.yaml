@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: login
+spec:
+  template:
+    metadata:
+      labels:
+        version: blue
+    spec:
+      containers:
+      - name: login
+        env:
+        - name: ACTIVE_COLOR
+          value: "blue"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order
+spec:
+  template:
+    metadata:
+      labels:
+        version: blue
+    spec:
+      containers:
+      - name: order
+        env:
+        - name: ACTIVE_COLOR
+          value: "blue"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+spec:
+  template:
+    metadata:
+      labels:
+        version: blue
+    spec:
+      containers:
+      - name: inventory
+        env:
+        - name: ACTIVE_COLOR
+          value: "blue"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  template:
+    metadata:
+      labels:
+        version: blue
+    spec:
+      containers:
+      - name: frontend
+        env:
+        - name: ACTIVE_COLOR
+          value: "blue"

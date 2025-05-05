@@ -1,0 +1,13 @@
+# serves the new version under test
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: prod
+resources:
+  - ../../base
+
+patchesStrategicMerge:
+  - deploy-green-patch.yaml
+  - svc-selector-green.yaml
+
