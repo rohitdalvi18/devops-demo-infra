@@ -5,31 +5,4 @@ metadata:
 spec:
   selector:
     app: login
-    version: green
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: order
-spec:
-  selector:
-    app: order
-    version: green
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: inventory
-spec:
-  selector:
-    app: inventory
-    version: green
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: frontend
-spec:
-  selector:
-    app: frontend
-    version: green
+    color: green
