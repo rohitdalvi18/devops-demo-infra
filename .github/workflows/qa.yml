@@ -64,7 +64,7 @@ jobs:
 
       - name: Wait for QA rollouts
         run: |
-          for dep in login order inventory frontend; do
+          for dep in login-blue order-blue inventory-blue frontend-blue; do
             kubectl rollout status deployment/$dep -n qa --timeout=120s
           done
 
