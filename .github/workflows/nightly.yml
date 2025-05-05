@@ -13,7 +13,7 @@ env:
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME: devops-demo
-  IMAGE_TAG: nightly-${{ github.run_number }}
+  IMAGE_TAG: RC-${{ github.run_number }}
 
 jobs:
   build-and-push:
@@ -118,10 +118,10 @@ jobs:
       - name: Patch images in k8s manifests
         run: |
           # replace placeholders in base deployments
-          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-deploy.yaml
-          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-deploy.yaml
-          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-deploy.yaml
-          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-deploy.yaml
+          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-blue-deploy.yaml
+          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-blue-deploy.yaml
+          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-blue-deploy.yaml
+          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-blue-deploy.yaml
 
       - name: Create namespace
         run: |
@@ -132,10 +132,10 @@ jobs:
 
       - name: Wait for all rollouts
         run: |
-          kubectl rollout status deploy/login     -n nightly --timeout=120s
-          kubectl rollout status deploy/order     -n nightly --timeout=120s
-          kubectl rollout status deploy/inventory -n nightly --timeout=120s
-          kubectl rollout status deploy/frontend  -n nightly --timeout=120s
+          kubectl rollout status deploy/login-blue     -n nightly --timeout=120s
+          kubectl rollout status deploy/order-blue     -n nightly --timeout=120s
+          kubectl rollout status deploy/inventory-blue -n nightly --timeout=120s
+          kubectl rollout status deploy/frontend-blue  -n nightly --timeout=120s
 
       - name: Cleanup Nightly namespace
         run: |
