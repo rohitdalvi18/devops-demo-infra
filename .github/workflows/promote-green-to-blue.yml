@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Verify image tag
         run: | 
-            echo "IMG_TAG=${IMG_TAG}" >> $GITHUB_ENV
+            echo `${{ env.IMG_TAG }}`
       
       - name: Pause for manual approval 🛑
         uses: trstringer/manual-approval@v1
@@ -39,11 +39,11 @@ jobs:
             issue-body: |
                 ✅ QA pipeline succeeded and the green deployment is healthy.
 
-                This step will promote the green image ${IMG_TAG} to the blue environment (production traffic).
+                This step will promote the green image `${{ env.IMG_TAG }}` to the blue environment (production traffic).
 
                 🔄 This involves:
                 • Updating service selectors to point to the new blue pods
-                • Redeploying with the same image tag: ${IMG_TAG}
+                • Redeploying with the same image tag: `${{ env.IMG_TAG }}`
 
                 📄 QA Pipeline Details:  
                 ${{ github.event.workflow_run.html_url }}
