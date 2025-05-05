@@ -25,6 +25,10 @@ jobs:
     name: Await Admin Approval for Blue Deployment
     runs-on: ubuntu-latest
     steps:
+      - name: Verify image tag
+        run: | 
+            echo "IMG_TAG=${IMG_TAG}" >> $GITHUB_ENV
+      
       - name: Pause for manual approval 🛑
         uses: trstringer/manual-approval@v1
         with:
