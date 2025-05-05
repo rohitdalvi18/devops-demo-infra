@@ -1,11 +1,15 @@
 name: UAT Pipeline
 
 on:
-  workflow_run:
-    workflows: ["QA Pipeline"]
-    types: [completed]
+#   workflow_run:
+    # workflows: ["QA Pipeline"]
+    # types: [completed]
   # allow manual re-runs if needed
   workflow_dispatch:
+    inputs:
+        image_tag:
+          description: 'ECR Image Tag (e.g., nightly-42)'
+          required: true
 
 # Grant rights to create & comment on issues
 permissions:
