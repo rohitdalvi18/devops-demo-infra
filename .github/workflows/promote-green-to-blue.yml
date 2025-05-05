@@ -36,6 +36,18 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
+      - name: Patch Base Manifests for Blue
+        run: |
+          # only patch the *blue* Deployment files
+          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" \
+            k8s/base/login-blue-deploy.yaml
+          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" \
+            k8s/base/order-blue-deploy.yaml
+          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" \
+            k8s/base/inventory-blue-deploy.yaml
+          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" \
+            k8s/base/frontend-blue-deploy.yaml
+            
       - name: Apply Blue Overlay
         run: kubectl apply -k k8s/overlays/prod/blue
 
