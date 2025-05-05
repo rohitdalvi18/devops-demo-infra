@@ -18,7 +18,7 @@ env:
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
   IMAGE_TAG:      ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
-  IMG_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.img_tag || format('green-{0}', github.event.workflow_run.run_number) }}
+  IMG_TAG: ${{ github.event.client_payload.img_tag || github.event.inputs.img_tag }}
 
 jobs:
   await-approval:
