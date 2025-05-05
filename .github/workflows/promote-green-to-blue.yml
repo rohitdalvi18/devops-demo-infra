@@ -6,6 +6,9 @@ on:
       image_tag:
         description: 'Docker image tag to deploy (e.g. nightly-42)'
         required: true
+      img_tag:
+        description: 'ECR Image Tag (e.g., nightly-42)'
+        required: true
   repository_dispatch:
     types: [Promote Green to Blue]
 
@@ -15,6 +18,7 @@ env:
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
   IMAGE_TAG:      ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
+  IMG_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.img_tag || format('green-{0}', github.event.workflow_run.run_number) }}
 
 jobs:
   await-approval:
@@ -31,11 +35,11 @@ jobs:
             issue-body: |
                 ✅ QA pipeline succeeded and the green deployment is healthy.
 
-                This step will promote the green image $IMAGE_TAG to the blue environment (production traffic).
+                This step will promote the green image ${IMG_TAG} to the blue environment (production traffic).
 
                 🔄 This involves:
                 • Updating service selectors to point to the new blue pods
-                • Redeploying with the same image tag: $IMAGE_TAG
+                • Redeploying with the same image tag: ${IMG_TAG}
 
                 📄 QA Pipeline Details:  
                 ${{ github.event.workflow_run.html_url }}

@@ -9,10 +9,6 @@ on:
       image_tag:
         description: 'ECR Image Tag (e.g., nightly-42)'
         required: true
-      img_tag:
-        description: 'ECR Image Tag (e.g., nightly-42)'
-        required: true
-
 
 env:
   AWS_REGION:     us-east-1
@@ -21,7 +17,6 @@ env:
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
   IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag || format('RC-{0}', github.event.workflow_run.run_number) }}
-  IMG_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.img_tag || format('green-{0}', github.event.workflow_run.run_number) }}
 
 jobs:
   deploy-qa:
