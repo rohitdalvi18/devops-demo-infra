@@ -206,8 +206,7 @@ jobs:
         with:
           token:      ${{ secrets.GH_TOKEN }}                 
           repository: ${{ github.repository }}             
-          event-type: trigger-uat                          
-          client-payload: |
-            {"image_tag": "${{ env.IMAGE_TAG }}"}           # pass inputs as JSON
+          event-type: trigger-uat                      
+          client-payload: '{"image_tag":"${{ env.IMAGE_TAG }}"}'
       
             
