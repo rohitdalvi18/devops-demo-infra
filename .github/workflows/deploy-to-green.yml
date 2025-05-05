@@ -2,7 +2,7 @@ name: Deploy to Green
 
 on:
   workflow_run:
-    workflows: ["QA Pipeline"]
+    workflows: ["UAT Pipeline"]
     types: [completed]
 
   workflow_dispatch:
