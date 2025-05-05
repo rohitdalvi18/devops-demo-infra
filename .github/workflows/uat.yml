@@ -18,9 +18,16 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
-  IMAGE_TAG:      nightly-${{ github.event.workflow_run.run_number }}
+  IMAGE_TAG:      ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag || format('nightly-{0}', github.event.workflow_run.run_number) }}
 
 jobs:
+  verify-image-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check image tag
+        run: | 
+            echo "Deploying image: $IMAGE_TAG"
+
   await-approval:
     # only run when QA succeeded
     # sws if: ${{ github.event.workflow_run.conclusion == 'success' }}
