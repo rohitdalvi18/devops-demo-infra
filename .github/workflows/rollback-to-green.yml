@@ -1,0 +1,63 @@
+name: Rollback to Green
+
+on:
+  workflow_dispatch:        # manually trigger when you need to roll back
+    inputs:
+      reason:
+        description: 'Why are we rolling back?'
+        required: false
+
+  repository_dispatch:
+    types: [rollback-to-green]
+
+env:
+  AWS_REGION:     us-east-1
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  CLUSTER_NAME:   devops-demo
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout infra repo
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region:            us-east-1
+
+      - name: Setup kubectl
+        run: |
+          KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+          echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+          curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+
+      - name: Re-apply Green overlay
+        run: |
+          kubectl apply -k k8s/overlays/prod/green
+
+      - name: Wait for Green rollouts
+        run: |
+          for svc in login-green order-green inventory-green frontend-green; do
+            kubectl rollout status deployment/$svc -n prod --timeout=300s
+          done
+
+      - name: Patch Service back to green
+        run: |
+          kubectl patch svc frontend -n prod \
+            -p '{"spec":{"selector":{"app":"frontend","color":"green"}}}'
+
+      - name: Confirm endpoints
+        run: |
+          kubectl get endpoints frontend -n prod
+          echo "Rolled back to GREEN. Reason: ${{ github.event.inputs.reason }}"

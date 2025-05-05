@@ -95,3 +95,17 @@ jobs:
           for svc in login-blue order-blue inventory-blue frontend-blue; do
             kubectl rollout status deployment/$svc -n prod --timeout=300s
           done
+  
+  rollback-on-failure:
+    needs: switch-to-blue
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    steps:
+        - name: Trigger rollback to green
+          uses: peter-evans/repository-dispatch@v3
+          with:
+            token:      ${{ secrets.GH_TOKEN }}
+            repository: ${{ github.repository }}
+            event-type: rollback-to-green
+            client-payload: |
+                    {"reason":"Blue promotion failed in run ${{ github.run_number }}"}
