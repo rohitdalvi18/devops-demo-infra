@@ -44,10 +44,15 @@ jobs:
 
       - name: Patch Base Manifests for Green
         run: |
-          sed -i "s|REPLACE_LOGIN_IMAGE|$ECR_REGISTRY/login-service:$IMAGE_TAG|g" k8s/base/login-deploy.yaml
-          sed -i "s|REPLACE_ORDER_IMAGE|$ECR_REGISTRY/order-service:$IMAGE_TAG|g" k8s/base/order-deploy.yaml
-          sed -i "s|REPLACE_INVENTORY_IMAGE|$ECR_REGISTRY/inventory-service:$IMAGE_TAG|g" k8s/base/inventory-deploy.yaml
-          sed -i "s|REPLACE_FRONTEND_IMAGE|$ECR_REGISTRY/frontend-service:$IMAGE_TAG|g" k8s/base/frontend-deploy.yaml
+          # replace in both blue and green deployments so they share the same image
+          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" \
+            k8s/base/login-blue-deploy.yaml k8s/base/login-green-deploy.yaml
+          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" \
+            k8s/base/order-blue-deploy.yaml k8s/base/order-green-deploy.yaml
+          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" \
+            k8s/base/inventory-blue-deploy.yaml k8s/base/inventory-green-deploy.yaml
+          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" \
+            k8s/base/frontend-blue-deploy.yaml k8s/base/frontend-green-deploy.yaml
 
       - name: Create namespace
         run: |

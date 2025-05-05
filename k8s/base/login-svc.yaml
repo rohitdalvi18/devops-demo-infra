@@ -6,7 +6,7 @@ spec:
   type: LoadBalancer
   selector:
     app: login
-    version: blue        # traffic goes to “blue” initially
+    color: blue        # traffic goes to “blue” initially
   ports:
   - port: 80
     targetPort: 3000

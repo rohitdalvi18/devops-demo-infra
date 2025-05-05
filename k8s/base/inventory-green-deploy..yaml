@@ -1,23 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: inventory
+  name: inventory-green
   labels:
     app: inventory
+    color: green
 spec:
   replicas: 2
   selector:
     matchLabels:
       app: inventory
-      version: blue     # initial version
+      color: green
   template:
     metadata:
       labels:
         app: inventory
-        version: blue
+        color: green
     spec:
       containers:
       - name: inventory
-        image: REPLACE_INVENTORY_IMAGE   # to be patched by overlays or CI
+        image: REPLACE_INVENTORY_IMAGE
         ports:
         - containerPort: 3000

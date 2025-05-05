@@ -6,7 +6,7 @@ spec:
   type: LoadBalancer
   selector:
     app: frontend
-    version: blue       # points at the “blue” pods initially
+    color: blue       # initially blue
   ports:
   - port: 80
     targetPort: 3000

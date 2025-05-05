@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-blue
+  labels:
+    app: order
+    color: blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order
+      color: blue
+  template:
+    metadata:
+      labels:
+        app: order
+        color: blue
+    spec:
+      containers:
+      - name: order
+        image: REPLACE_ORDER_IMAGE
+        ports:
+        - containerPort: 3000

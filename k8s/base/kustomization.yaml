@@ -1,9 +1,13 @@
 resources:
-  - login-deploy.yaml
+  - login-blue-deploy.yaml
+  - login-green-deploy.yaml
   - login-svc.yaml
-  - order-deploy.yaml
+  - order-blue-deploy.yaml
+  - order-green-deploy.yaml
   - order-svc.yaml
-  - inventory-deploy.yaml
+  - inventory-green-deploy.yaml
+  - inventory-blue-deploy.yaml
   - inventory-svc.yaml
-  - frontend-deploy.yaml        # new
-  - frontend-svc.yaml           # new
+  - frontend-blue-deploy.yaml
+  - frontend-green-deploy.yaml
+  - frontend-svc.yaml           

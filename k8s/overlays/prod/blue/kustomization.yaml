@@ -1,15 +1,7 @@
-# serves the current live version of the application
-
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: prod
-
 resources:
   - ../../../base
-
 patchesStrategicMerge:
-  - deploy-blue-patch.yaml
-  - svc-selector-blue.yaml
-
-
+  - service-selector-blue.yaml
