@@ -118,6 +118,7 @@ jobs:
       - name: Deploy Green Overlay
         run: |
           kubectl apply -k k8s/overlays/prod/green
+          kubectl patch svc frontend -n prod -p '{"spec":{"selector":{"app":"frontend","color":"green"}}}'
 
       - name: Wait for Green Rollout
         run: |
