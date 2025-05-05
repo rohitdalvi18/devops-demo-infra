@@ -37,6 +37,7 @@ jobs:
 
   await-approval:
     # only run when QA succeeded
+    name: Await Admin Approval
     needs: verify-image-tag
     # sws if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest

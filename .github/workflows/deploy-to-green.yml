@@ -6,10 +6,6 @@ on:
     types: [completed]
 
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'Docker image tag to deploy (e.g. green-42)'
-        required: true
 
 env:
   AWS_REGION:     us-east-1
@@ -125,3 +121,16 @@ jobs:
           for svc in login-green order-green inventory-green frontend-green; do
             kubectl rollout status deployment/$svc -n prod --timeout=300s
           done
+
+  trigger-uat:
+    name: Trigger Promotion to Blue
+    needs: deploy-green
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Green Promotion Pipeline
+        uses: peter-evans/repository-dispatch@v3
+        with:
+            token:      ${{ secrets.GH_TOKEN }}                 
+            repository: ${{ github.repository }}             
+            event-type: Green Promotion Pipeline                     
+            client-payload: '{"image_tag": "RC-25","img_tag": "$IMAGE_TAG"}'

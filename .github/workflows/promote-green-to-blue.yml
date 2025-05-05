@@ -6,14 +6,43 @@ on:
       image_tag:
         description: 'Docker image tag to deploy (e.g. nightly-42)'
         required: true
+  repository_dispatch:
+    types: [Green Promotion Pipeline]
+
 env:
   AWS_REGION:     us-east-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
-  IMAGE_TAG:      ${{ github.event.inputs.image_tag }}
+  IMAGE_TAG:      ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
 
 jobs:
+  await-approval:
+    name: Await Admin Approval for Blue Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pause for manual approval 🛑
+        uses: trstringer/manual-approval@v1
+        with:
+            secret: ${{ secrets.GH_token }}
+            approvers: rgdalvi            # GitHub username of the approver
+            minimum-approvals: 1
+            issue-title: "Approve Production Deployment (Green → Blue)"
+            issue-body: |
+                ✅ QA pipeline succeeded and the green deployment is healthy.
+
+                This step will promote the green image `${IMAGE_TAG}` to the blue environment (production traffic).
+
+                🔄 This involves:
+                • Updating service selectors to point to the new blue pods
+                • Redeploying with the same image tag: `${IMAGE_TAG}`
+
+                📄 QA Pipeline Details:  
+                ${{ github.event.workflow_run.html_url }}
+
+                🟢 **To proceed**, comment **"approved"**, **"lgtm"**, or **"yes"**.  
+                🔴 **To cancel**, comment **"deny"** or **"no"**.
+
   switch-to-blue:
     name: Promote Green to Blue
     runs-on: ubuntu-latest
