@@ -31,7 +31,7 @@ jobs:
   verify-image-tag:
     runs-on: ubuntu-latest
     steps:
-      - name: Check image tag
+      - name: Verify image tag
         run: | 
             echo "Deploying image: $IMAGE_TAG"
 
@@ -88,10 +88,10 @@ jobs:
 
       - name: Patch images in base manifests
         run: |
-          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-deploy.yaml
-          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-deploy.yaml
-          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-deploy.yaml
-          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-deploy.yaml
+          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-blue-deploy.yaml
+          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-blue-deploy.yaml
+          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-blue-deploy.yaml
+          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-blue-deploy.yaml
 
       - name: Create namespace
         run: |
@@ -105,6 +105,31 @@ jobs:
           for dep in login order inventory frontend; do
             kubectl rollout status deploy/$dep -n uat --timeout=120s
           done
+
+  uat-tests:
+    name: UAT Tests
+    needs: deploy-uat
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
+          aws-region:            us-east-1
+
+      - name: Setup kubectl
+        run: |
+            KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+            echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+            curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+            chmod +x kubectl
+            sudo mv kubectl /usr/local/bin/
+            kubectl version --client
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
       - name: UAT TEST - AUTH Endpoint verification
         run: |
@@ -134,4 +159,3 @@ jobs:
         run: |
             kubectl delete namespace uat                    
             kubectl wait --for=delete namespace uat --timeout=200s
-

@@ -3,9 +3,9 @@ name: Promote Green to Blue
 on:
   workflow_dispatch:
     inputs:
-        image_tag:
-          description: 'Docker image tag to deploy (e.g. nightly-42)'
-          required: true
+      image_tag:
+        description: 'Docker image tag to deploy (e.g. nightly-42)'
+        required: true
 env:
   AWS_REGION:     us-east-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -15,6 +15,7 @@ env:
 
 jobs:
   switch-to-blue:
+    name: Promote Green to Blue
     runs-on: ubuntu-latest
     steps:
       - name: Checkout infra repo

@@ -21,6 +21,7 @@ env:
 
 jobs:
   deploy-qa:
+    name: Deploy to QA
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -49,10 +50,10 @@ jobs:
       - name: Patch images in base manifests
         run: |
           # replace placeholders with real ECR images and the nightly tag
-          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-deploy.yaml
-          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-deploy.yaml
-          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-deploy.yaml
-          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-deploy.yaml
+          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-blue-deploy.yaml
+          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-blue-deploy.yaml
+          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-blue-deploy.yaml
+          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-blue-deploy.yaml
 
       - name: Create namespace
         run: |
@@ -109,6 +110,7 @@ jobs:
           exit 1
 
   smoke-tests:
+    name: Integration Tests
     needs: wait-for-loadbalancer
     runs-on: ubuntu-latest
     steps:
@@ -183,6 +185,7 @@ jobs:
             kubectl wait --for=delete namespace qa --timeout=200s
 
   trigger-uat:
+    name: Trigger UAT
     needs: smoke-tests
     runs-on: ubuntu-latest
     steps:
