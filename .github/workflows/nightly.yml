@@ -87,11 +87,18 @@ jobs:
       #     docker tag frontend-service:${IMAGE_TAG} ${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}
       #     docker push ${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}
 
-      - name: Build & Push Only Changed Services with Cache
-        env:
-          AWS_REGION:     us-east-1
-          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-          ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build & Push Only Updated Services
         run: |
           SERVICES=(login-service order-service inventory-service frontend-service)
           for svc in "${SERVICES[@]}"; do
