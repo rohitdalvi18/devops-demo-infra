@@ -49,25 +49,25 @@ jobs:
         run: |
             aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
-      - name: Build & push login-service
+      - name: Re-tag login-service
         run: |
             docker build -t login-service:${IMAGE_TAG} source/login-service
             docker tag login-service:${IMAGE_TAG} ${ECR_REGISTRY}/login-service:${IMAGE_TAG}
             docker push ${ECR_REGISTRY}/login-service:${IMAGE_TAG}
 
-      - name: Build & push order-service
+      - name: Re-tag order-service
         run: |
             docker build -t order-service:${IMAGE_TAG} source/order-service
             docker tag order-service:${IMAGE_TAG} ${ECR_REGISTRY}/order-service:${IMAGE_TAG}
             docker push ${ECR_REGISTRY}/order-service:${IMAGE_TAG}
 
-      - name: Build & push inventory-service
+      - name: Re-tag inventory-service
         run: |
             docker build -t inventory-service:${IMAGE_TAG} source/inventory-service
             docker tag inventory-service:${IMAGE_TAG} ${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}
             docker push ${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}
 
-      - name: Build & push frontend-service
+      - name: Re-tag frontend-service
         run: |
             docker build -t frontend-service:${IMAGE_TAG} source/frontend-service
             docker tag frontend-service:${IMAGE_TAG} ${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}
