@@ -24,7 +24,7 @@ jobs:
       - name: Checkout full history
         uses: actions/checkout@v3
         with:
-            repository: rohitdalvi18/devops-demo-source
+            # repository: rohitdalvi18/devops-demo-source
             # ref: main
             # token: ${{ secrets.GH_TOKEN }}
             fetch-depth: 0
