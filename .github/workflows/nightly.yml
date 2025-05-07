@@ -39,20 +39,22 @@ jobs:
             bump_each_commit: true
 
       - name: Export VERSION
-        run: echo "VERSION=v${{ steps.calculate.outputs.version }}" >> $GITHUB_ENV
+        run: echo "VERSION=${{ steps.calculate.outputs.version }}-rc1" >> $GITHUB_ENV
 
   build-and-push:
     needs: semantic-version
     env:
-      IMAGE_TAG: "v${{ needs.semantic-version.outputs.version }}"
+      IMAGE_VERSION: "${{ needs.semantic-version.outputs.version }}"
+      IMAGE_TAG: "${{needs.semantic-version.outputs.version}}-rc1"
 
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
     steps:
       - name: Check image tag
         run: | 
-            echo "Deploying image: v${{ needs.semantic-version.outputs.version }}"
-            echo "IMAGE_TAG=v${{ needs.semantic-version.outputs.version }}" >> $GITHUB_ENV
+            echo "Deploying image: ${{needs.semantic-version.outputs.version}}-rc1"
+            echo "IMAGE_VERSION=${{ needs.semantic-version.outputs.version }}" >> $GITHUB_ENV
+            echo "IMAGE_TAG=${{needs.semantic-version.outputs.version}}-rc1" >> $GITHUB_ENV
             
       - name: Checkout infra repo
         uses: actions/checkout@v3
@@ -155,13 +157,14 @@ jobs:
           path: .image-hashes
           key: ${{ runner.os }}-image-hash-cache-${{ github.run_id }}
 
-
   deploy-nightly:
     name: Deploy to Nightly Namespace
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs:
+      - semantic-version 
+      - build-and-push
     env:
-      IMAGE_TAG: "v${{ needs.semantic-version.outputs.version }}"
+      IMAGE_TAG: "${{ needs.semantic-version.outputs.version }}-rc1"
     steps:
       - name: Check image tag
         run: | 
@@ -230,8 +233,8 @@ jobs:
     steps:
       - name: Check image tag
         run: | 
-            echo "Deploying image: v${{ needs.semantic-version.outputs.version }}"
-            echo "IMAGE_TAG=v${{ needs.semantic-version.outputs.version }}" >> $GITHUB_ENV
+            echo "Deploying image: v${{ needs.semantic-version.outputs.version }}-rc1"
+            echo "IMAGE_TAG=v${{ needs.semantic-version.outputs.version }}-rc1" >> $GITHUB_ENV
       
       - name: Trigger QA pipeline
         uses: peter-evans/repository-dispatch@v3
@@ -239,5 +242,5 @@ jobs:
           token:      ${{ secrets.GH_TOKEN }}                 
           repository: ${{ github.repository }}             
           event-type: QA Pipeline                     
-          client-payload: '{"image_tag":"v${{ needs.semantic-version.outputs.version }}"}'
+          client-payload: '{"image_tag":"${{ needs.semantic-version.outputs.version }}"}'
               

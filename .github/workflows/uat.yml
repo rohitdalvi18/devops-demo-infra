@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
         image_tag:
-          description: 'ECR Image Tag (e.g., nightly-42)'
+          description: 'ECR Image Tag (e.g., v1.2.3)'
           required: true
 
 # Grant rights to create & comment on issues
@@ -25,7 +25,8 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
-  IMAGE_TAG:      ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
+  IMAGE_TAG:      ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}-rc1
+  IMAGE_VERSION: ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
 
 jobs:
   verify-image-tag:
@@ -52,7 +53,7 @@ jobs:
           issue-body: |
             QA pipeline has passed and awaits promotion to UAT
 
-            Deploying image `${IMAGE_TAG}` to UAT.
+            Deploying image `${{env.IMAGE_TAG}}` to UAT.
 
             • You can view QA pipeline run details:  
               ${{ github.event.workflow_run.html_url }}
@@ -163,3 +164,22 @@ jobs:
         run: |
             kubectl delete namespace uat                    
             kubectl wait --for=delete namespace uat --timeout=200s
+
+  trigger-uat:
+    name: Trigger Green Pipeline
+    needs: deploy-uat
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check image tag
+        run: | 
+            echo "Deploying image: $IMAGE_TAG"
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+            echo "env.IMAGE_TAG=${{ env.IMAGE_VERSION }}-rc1"
+      
+      - name: Trigger Green pipeline
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token:      ${{ secrets.GH_TOKEN }}                 
+          repository: ${{ github.repository }}             
+          event-type: Deploy to Green                     
+          client-payload: '{"image_tag":"${{ env.IMAGE_VERSION }}"}'
