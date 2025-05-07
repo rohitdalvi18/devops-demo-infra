@@ -114,3 +114,4 @@ jobs:
             event-type: rollback-to-green
             client-payload: |
                     {"reason":"Blue promotion failed in run ${{ github.run_number }}"}
+                    
