@@ -38,7 +38,6 @@ jobs:
             aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
             aws-region:            us-east-1
         
-
       - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
@@ -48,44 +47,20 @@ jobs:
           aws ecr describe-repositories --repository-names "login-service" || \
           aws ecr create-repository --repository-name "login-service"
 
-      # - name: Build & push login-service
-      #   run: |
-      #     docker build -t login-service:${IMAGE_TAG} source/login-service
-      #     docker tag login-service:${IMAGE_TAG} ${ECR_REGISTRY}/login-service:${IMAGE_TAG}
-      #     docker push ${ECR_REGISTRY}/login-service:${IMAGE_TAG}
-
       - name: Create order-service repo if not exists
         run: |
           aws ecr describe-repositories --repository-names "order-service" || \
           aws ecr create-repository --repository-name "order-service"
-
-      # - name: Build & push order-service
-      #   run: |
-      #     docker build -t order-service:${IMAGE_TAG} source/order-service
-      #     docker tag order-service:${IMAGE_TAG} ${ECR_REGISTRY}/order-service:${IMAGE_TAG}
-      #     docker push ${ECR_REGISTRY}/order-service:${IMAGE_TAG}
 
       - name: Create inventory-service repo if not exists
         run: |
           aws ecr describe-repositories --repository-names "inventory-service" || \
           aws ecr create-repository --repository-name "inventory-service"
 
-      # - name: Build & push inventory-service
-      #   run: |
-      #     docker build -t inventory-service:${IMAGE_TAG} source/inventory-service
-      #     docker tag inventory-service:${IMAGE_TAG} ${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}
-      #     docker push ${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}
-
       - name: Create frontend-service repo if not exists
         run: |
           aws ecr describe-repositories --repository-names "frontend-service" || \
           aws ecr create-repository --repository-name "frontend-service"
-
-      # - name: Build & push frontend-service
-      #   run: |
-      #     docker build -t frontend-service:${IMAGE_TAG} source/frontend-service
-      #     docker tag frontend-service:${IMAGE_TAG} ${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}
-      #     docker push ${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}
 
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
@@ -100,46 +75,37 @@ jobs:
 
       - name: Build & Push Only Updated Services
         run: |
-            SERVICES=(login-service order-service inventory-service frontend-service)
-            for svc in "${SERVICES[@]}"; do
-              CONTEXT="source/$svc"
-              LOCAL_TAG="${svc}:${IMAGE_TAG}"
-              REMOTE_URI="${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
+          SERVICES=(login-service order-service inventory-service frontend-service)
+          mkdir -p .image-hashes
 
-              echo ">>> Building $LOCAL_TAG from $CONTEXT"
-              docker buildx build \
-                --quiet \
-                --output=type=docker \
-                --cache-from=type=local,src=/tmp/.buildx-cache \
-                --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
-                -t $LOCAL_TAG \
-                "$CONTEXT"
+          for svc in "${SERVICES[@]}"; do
+            CONTEXT="source/$svc"
+            HASH_FILE=".image-hashes/${svc}.sha256"
+            LOCAL_TAG="${svc}:${IMAGE_TAG}"
+            REMOTE_URI="${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
 
-              # Tag with ECR URI
-              docker tag $LOCAL_TAG $REMOTE_URI
+            echo ">>> Calculating checksum for $svc"
+            NEW_HASH=$(find "$CONTEXT" -type f -exec sha256sum {} \; | sort | sha256sum | awk '{print $1}')
+            OLD_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
 
-              # Get digest of the local image by pushing to a dummy ECR tag and capturing the digest
-              TEMP_PUSH_RESULT=$(docker push $REMOTE_URI 2>&1 | tee /tmp/pushlog.txt)
-              DIGEST=$(grep "digest:" /tmp/pushlog.txt | awk '{print $3}')
+            if [[ "$NEW_HASH" == "$OLD_HASH" ]]; then
+              echo "✔️  $svc unchanged (hash: $NEW_HASH), skipping build and push."
+              continue
+            fi
 
-              # Check if digest already exists remotely (meaning image is unchanged)
-              EXISTS=$(aws ecr list-images \
-                --region $AWS_REGION \
-                --repository-name $svc \
-                --filter "tagStatus=TAGGED" \
-                --query 'imageIds[?imageTag==`'"$IMAGE_TAG"'`]' \
-                --output text)
+            echo "🔄  Changes detected in $svc, building and pushing..."
+            echo "$NEW_HASH" > "$HASH_FILE"
 
-              if [[ "$EXISTS" == *"$IMAGE_TAG"* ]]; then
-                echo "✔️  $svc already pushed, deleting new tag due to no content change."
-                aws ecr batch-delete-image \
-                  --region $AWS_REGION \
-                  --repository-name $svc \
-                  --image-ids imageTag=$IMAGE_TAG
-              else
-                echo "✅  $svc updated, digest $DIGEST"
-              fi
-            done
+            docker buildx build \
+              --load \
+              --cache-from=type=local,src=/tmp/.buildx-cache \
+              --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+              -t $LOCAL_TAG \
+              "$CONTEXT"
+
+            docker tag $LOCAL_TAG $REMOTE_URI
+            docker push $REMOTE_URI
+          done
 
       - name: Move updated cache
         run: |
