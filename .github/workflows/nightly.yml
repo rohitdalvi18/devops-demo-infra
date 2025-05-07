@@ -73,44 +73,53 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      - name: Restore build context hash cache
+        uses: actions/cache@v4
+        with:
+          path: .image-hashes
+          key: ${{ runner.os }}-image-hash-cache
+          restore-keys: |
+            ${{ runner.os }}-image-hash-
+      
       - name: Build & Push Only Updated Services
         run: |
           SERVICES=(login-service order-service inventory-service frontend-service)
           mkdir -p .image-hashes
-
+      
           for svc in "${SERVICES[@]}"; do
             CONTEXT="source/$svc"
             HASH_FILE=".image-hashes/${svc}.sha256"
             LOCAL_TAG="${svc}:${IMAGE_TAG}"
             REMOTE_URI="${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
-
-            echo ">>> Calculating checksum for $svc"
-            NEW_HASH=$(find "$CONTEXT" -type f -exec sha256sum {} \; | sort | sha256sum | awk '{print $1}')
+      
+            echo ">>> Calculating stable checksum for $svc"
+            NEW_HASH=$(find "$CONTEXT" -type f ! -name '*.env' ! -name '*.DS_Store' -exec sha256sum {} + | sort -k 2 | sha256sum | awk '{print $1}')
             OLD_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
-
+      
             if [[ "$NEW_HASH" == "$OLD_HASH" ]]; then
               echo "✔️  $svc unchanged (hash: $NEW_HASH), skipping build and push."
               continue
             fi
-
-            echo "🔄  Changes detected in $svc, building and pushing..."
+      
+            echo "🔄  Changes detected in $svc (new hash: $NEW_HASH), building and pushing..."
             echo "$NEW_HASH" > "$HASH_FILE"
-
+      
             docker buildx build \
               --load \
               --cache-from=type=local,src=/tmp/.buildx-cache \
               --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
               -t $LOCAL_TAG \
               "$CONTEXT"
-
+      
             docker tag $LOCAL_TAG $REMOTE_URI
             docker push $REMOTE_URI
           done
-
-      - name: Move updated cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      
+      - name: Save updated hash cache
+        uses: actions/cache@v4
+        with:
+          path: .image-hashes
+          key: ${{ runner.os }}-image-hash-cache-${{ github.run_id }}
 
 
   # deploy-nightly:
