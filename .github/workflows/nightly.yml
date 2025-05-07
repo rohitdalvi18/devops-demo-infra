@@ -132,23 +132,27 @@ jobs:
             NEW_HASH=$(find "$CONTEXT" -type f ! -name '*.env' ! -name '*.DS_Store' -exec sha256sum {} + | sort -k 2 | sha256sum | awk '{print $1}')
             OLD_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
       
-            if [[ "$NEW_HASH" == "$OLD_HASH" ]]; then
+            # if [[ "$NEW_HASH" == "$OLD_HASH" ]]; then
+            #   echo "✅  $svc unchanged (hash: $NEW_HASH), skipping build and push."
+            #   continue
+            # fi
+
+            if [[ "$svc" != "inventory-service" ]]; then
               echo "✅  $svc unchanged (hash: $NEW_HASH), skipping build and push."
-              continue
-            fi
-      
-            echo "🔄  Changes detected in $svc (new hash: $NEW_HASH), building and pushing..."
-            echo "$NEW_HASH" > "$HASH_FILE"
+            else
+              echo "🔄  Changes detected in $svc (new hash: $NEW_HASH), building and pushing..."
+              echo "$NEW_HASH" > "$HASH_FILE"
+        
       
             docker buildx build \
               --load \
               --cache-from=type=local,src=/tmp/.buildx-cache \
               --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
               -t $LOCAL_TAG \
-              "$CONTEXT"
+              "$CONTEXT" > /dev/null 2>&1
       
-            docker tag $LOCAL_TAG $REMOTE_URI
-            docker push $REMOTE_URI
+            docker tag $LOCAL_TAG $REMOTE_URI > /dev/null 2>&1
+            docker push $REMOTE_URI > /dev/null 2>&1
           done
       
       - name: Save updated hash cache
