@@ -204,3 +204,4 @@ jobs:
   #         kubectl delete namespace nightly                    
   #         kubectl wait --for=delete namespace nightly --timeout=200s
   #         echo "✅ Nightly namespace deleted successfully"
+  
