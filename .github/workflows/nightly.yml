@@ -87,16 +87,16 @@ jobs:
       #     docker tag frontend-service:${IMAGE_TAG} ${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}
       #     docker push ${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
+      # - name: Set up Docker
+      #   uses: docker/setup-buildx-action@v3
 
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+      # - name: Cache Docker layers
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: /tmp/.buildx-cache
+      #     key: ${{ runner.os }}-buildx-${{ github.sha }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-buildx-
 
       - name: Build & Push Only Updated Services
         run: |
@@ -107,15 +107,12 @@ jobs:
             REMOTE_URI="${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
 
             echo ">>> Building $LOCAL_TAG from $CONTEXT"
-            docker buildx build \
-              --load \
-              --cache-from=type=local,src=/tmp/.buildx-cache \
-              --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
-              -t $LOCAL_TAG \
-              ./source/$svc
+            docker build -t $LOCAL_TAG $CONTEXT
 
             # Get local digest (may be blank if never pushed)
-            LOCAL_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $LOCAL_TAG 2>/dev/null | cut -d@ -f2 || echo "")
+            LOCAL_DIGEST=$(docker inspect \
+              --format='{{index .RepoDigests 0}}' $LOCAL_TAG 2>/dev/null \
+              | cut -d@ -f2 || echo "")
 
             # Get remote digest for same tag (or empty if tag not found)
             REMOTE_DIGEST=$(aws ecr describe-images \
@@ -128,16 +125,16 @@ jobs:
             if [[ -n "$LOCAL_DIGEST" && "$LOCAL_DIGEST" == "$REMOTE_DIGEST" ]]; then
               echo "✔️  $svc unchanged (digest $LOCAL_DIGEST), skipping push."
             else
-              echo "🔄  Pushing $REMOTE_URI"
+              echo "🔄  Pushing $REMOTE_URI (local: $LOCAL_DIGEST; remote: $REMOTE_DIGEST)"
               docker tag $LOCAL_TAG $REMOTE_URI
               docker push $REMOTE_URI
             fi
           done
 
-      - name: Move updated cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      # - name: Move updated cache
+      #   run: |
+      #     rm -rf /tmp/.buildx-cache
+      #     mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
 
   # deploy-nightly:
