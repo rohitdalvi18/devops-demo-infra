@@ -31,120 +31,120 @@ jobs:
         uses: paulhatch/semantic-version@v5.4.0      
         with:
             tag_prefix: "v"
-            major_pattern: "^major:"
-            minor_pattern: "^minor:"
+            major_pattern: "(MAJOR)"
+            minor_pattern: "(MINOR)"
             bump_each_commit: false
 
       - name: Export VERSION
         run: echo "VERSION=v${{ steps.calculate.outputs.version }}" >> $GITHUB_ENV
 
-  build-and-push:
-    needs: semantic-version
-    env:
-      IMAGE_TAG: ${{ needs.semantic-version.outputs.version }}
-    name: Build & Push Docker Images
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout infra repo
-        uses: actions/checkout@v3
+  # build-and-push:
+  #   needs: semantic-version
+  #   env:
+  #     IMAGE_TAG: ${{ needs.semantic-version.outputs.version }}
+  #   name: Build & Push Docker Images
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout infra repo
+  #       uses: actions/checkout@v3
 
-      - name: Checkout source repo
-        uses: actions/checkout@v3
-        with:
-          repository: rohitdalvi18/devops-demo-source
-          path: source
-          token: ${{ secrets.GH_TOKEN }}
+  #     - name: Checkout source repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         repository: rohitdalvi18/devops-demo-source
+  #         path: source
+  #         token: ${{ secrets.GH_TOKEN }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-            aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-            aws-region:            us-east-1
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
+  #           aws-region:            us-east-1
         
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+  #     - name: Login to Amazon ECR
+  #       run: |
+  #         aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
     
-      - name: Create login-service repo if not exists
-        run: |
-          aws ecr describe-repositories --repository-names "login-service" || \
-          aws ecr create-repository --repository-name "login-service"
+  #     - name: Create login-service repo if not exists
+  #       run: |
+  #         aws ecr describe-repositories --repository-names "login-service" || \
+  #         aws ecr create-repository --repository-name "login-service"
 
-      - name: Create order-service repo if not exists
-        run: |
-          aws ecr describe-repositories --repository-names "order-service" || \
-          aws ecr create-repository --repository-name "order-service"
+  #     - name: Create order-service repo if not exists
+  #       run: |
+  #         aws ecr describe-repositories --repository-names "order-service" || \
+  #         aws ecr create-repository --repository-name "order-service"
 
-      - name: Create inventory-service repo if not exists
-        run: |
-          aws ecr describe-repositories --repository-names "inventory-service" || \
-          aws ecr create-repository --repository-name "inventory-service"
+  #     - name: Create inventory-service repo if not exists
+  #       run: |
+  #         aws ecr describe-repositories --repository-names "inventory-service" || \
+  #         aws ecr create-repository --repository-name "inventory-service"
 
-      - name: Create frontend-service repo if not exists
-        run: |
-          aws ecr describe-repositories --repository-names "frontend-service" || \
-          aws ecr create-repository --repository-name "frontend-service"
+  #     - name: Create frontend-service repo if not exists
+  #       run: |
+  #         aws ecr describe-repositories --repository-names "frontend-service" || \
+  #         aws ecr create-repository --repository-name "frontend-service"
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
+  #     - name: Set up Docker
+  #       uses: docker/setup-buildx-action@v3
 
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+  #     - name: Cache Docker layers
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: /tmp/.buildx-cache
+  #         key: ${{ runner.os }}-buildx-${{ github.sha }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-buildx-
 
-      - name: Restore build context hash cache
-        uses: actions/cache@v4
-        with:
-          path: .image-hashes
-          key: ${{ runner.os }}-image-hash-cache
-          restore-keys: |
-            ${{ runner.os }}-image-hash-
+  #     - name: Restore build context hash cache
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: .image-hashes
+  #         key: ${{ runner.os }}-image-hash-cache
+  #         restore-keys: |
+  #           ${{ runner.os }}-image-hash-
       
-      - name: Build & Push Only Updated Services
-        run: |
-          SERVICES=(login-service order-service inventory-service frontend-service)
-          mkdir -p .image-hashes
+  #     - name: Build & Push Only Updated Services
+  #       run: |
+  #         SERVICES=(login-service order-service inventory-service frontend-service)
+  #         mkdir -p .image-hashes
       
-          for svc in "${SERVICES[@]}"; do
-            CONTEXT="source/$svc"
-            HASH_FILE=".image-hashes/${svc}.sha256"
-            LOCAL_TAG="${svc}:${IMAGE_TAG}"
-            REMOTE_URI="${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
+  #         for svc in "${SERVICES[@]}"; do
+  #           CONTEXT="source/$svc"
+  #           HASH_FILE=".image-hashes/${svc}.sha256"
+  #           LOCAL_TAG="${svc}:${IMAGE_TAG}"
+  #           REMOTE_URI="${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
       
-            echo ">>> Calculating stable checksum for $svc"
-            NEW_HASH=$(find "$CONTEXT" -type f ! -name '*.env' ! -name '*.DS_Store' -exec sha256sum {} + | sort -k 2 | sha256sum | awk '{print $1}')
-            OLD_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
+  #           echo ">>> Calculating stable checksum for $svc"
+  #           NEW_HASH=$(find "$CONTEXT" -type f ! -name '*.env' ! -name '*.DS_Store' -exec sha256sum {} + | sort -k 2 | sha256sum | awk '{print $1}')
+  #           OLD_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
       
-            if [[ "$NEW_HASH" == "$OLD_HASH" ]]; then
-              echo "✅  $svc unchanged (hash: $NEW_HASH), skipping build and push."
-              continue
-            fi
+  #           if [[ "$NEW_HASH" == "$OLD_HASH" ]]; then
+  #             echo "✅  $svc unchanged (hash: $NEW_HASH), skipping build and push."
+  #             continue
+  #           fi
       
-            echo "🔄  Changes detected in $svc (new hash: $NEW_HASH), building and pushing..."
-            echo "$NEW_HASH" > "$HASH_FILE"
+  #           echo "🔄  Changes detected in $svc (new hash: $NEW_HASH), building and pushing..."
+  #           echo "$NEW_HASH" > "$HASH_FILE"
       
-            docker buildx build \
-              --load \
-              --cache-from=type=local,src=/tmp/.buildx-cache \
-              --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
-              -t $LOCAL_TAG \
-              "$CONTEXT"
+  #           docker buildx build \
+  #             --load \
+  #             --cache-from=type=local,src=/tmp/.buildx-cache \
+  #             --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+  #             -t $LOCAL_TAG \
+  #             "$CONTEXT"
       
-            docker tag $LOCAL_TAG $REMOTE_URI
-            docker push $REMOTE_URI
-          done
+  #           docker tag $LOCAL_TAG $REMOTE_URI
+  #           docker push $REMOTE_URI
+  #         done
       
-      - name: Save updated hash cache
-        uses: actions/cache@v4
-        with:
-          path: .image-hashes
-          key: ${{ runner.os }}-image-hash-cache-${{ github.run_id }}
+  #     - name: Save updated hash cache
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: .image-hashes
+  #         key: ${{ runner.os }}-image-hash-cache-${{ github.run_id }}
 
 
   # deploy-nightly:
