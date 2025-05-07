@@ -107,10 +107,12 @@ jobs:
             REMOTE_URI="${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
 
             echo ">>> Building $LOCAL_TAG from $CONTEXT"
-            docker buildx build --load -t \
+            docker buildx build \
+              --load \
               --cache-from=type=local,src=/tmp/.buildx-cache \
               --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
-              -t $LOCAL_TAG $CONTEXT
+              -t $LOCAL_TAG $CONTEXT \
+              ./source/$svc
 
             # Get local digest (may be blank if never pushed)
             LOCAL_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $LOCAL_TAG 2>/dev/null | cut -d@ -f2 || echo "")
