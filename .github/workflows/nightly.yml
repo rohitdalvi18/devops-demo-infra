@@ -33,7 +33,7 @@ jobs:
             tag_prefix: "v"
             major_pattern: "^major:"
             minor_pattern: "^minor:"
-            bump_each_commit: true
+            bump_each_commit: false
 
       - name: Export VERSION
         run: echo "VERSION=v${{ steps.calculate.outputs.version }}" >> $GITHUB_ENV
