@@ -31,8 +31,9 @@ jobs:
         uses: paulhatch/semantic-version@v5.4.0      
         with:
             tag_prefix: "v"
+
       - name: Export VERSION
-        run: echo "VERSION=${{ steps.calculate.outputs.version }}" >> $GITHUB_ENV
+        run: echo "::set-output name=version::v${{ steps.calculate.outputs.version }}" >>
 
   build-and-push:
     needs: semantic-version

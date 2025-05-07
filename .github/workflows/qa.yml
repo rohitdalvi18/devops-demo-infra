@@ -1,9 +1,9 @@
 name: QA Pipeline
 
 on:
-  workflow_run:
-    workflows: ["Nightly Build & Deploy"]
-    types: [completed]
+#   workflow_run:
+#     workflows: ["Nightly Build & Deploy"]
+#     types: [completed]
   workflow_dispatch:
     inputs:
       image_tag:
