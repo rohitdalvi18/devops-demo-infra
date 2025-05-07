@@ -142,4 +142,4 @@ jobs:
             token:      ${{ secrets.GH_TOKEN }}                 
             repository: ${{ github.repository }}             
             event-type: Promote Green to Blue                     
-            client-payload: '{"image_tag": "rc-1","img_tag": "${{ env.IMAGE_TAG }}"}'
+            client-payload: '{"image_tag": "${{ env.IMAGE_TAG }}-rc1","img_tag": "${{ env.IMAGE_TAG }}"}'
