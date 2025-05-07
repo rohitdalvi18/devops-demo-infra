@@ -142,7 +142,7 @@ jobs:
             else
               echo "🔄  Changes detected in $svc (new hash: $NEW_HASH), building and pushing..."
               echo "$NEW_HASH" > "$HASH_FILE"
-        
+            fi
       
             docker buildx build \
               --load \
@@ -153,6 +153,7 @@ jobs:
       
             docker tag $LOCAL_TAG $REMOTE_URI > /dev/null 2>&1
             docker push $REMOTE_URI > /dev/null 2>&1
+          done
       
       - name: Save updated hash cache
         uses: actions/cache@v4
