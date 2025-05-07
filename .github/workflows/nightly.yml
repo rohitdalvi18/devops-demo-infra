@@ -33,7 +33,7 @@ jobs:
             tag_prefix: "v"
             major_pattern: "(MAJOR)"
             minor_pattern: "(MINOR)"
-            bump_each_commit: false
+            bump_each_commit: true
 
       - name: Export VERSION
         run: echo "VERSION=v${{ steps.calculate.outputs.version }}" >> $GITHUB_ENV
@@ -204,5 +204,4 @@ jobs:
   #         kubectl delete namespace nightly                    
   #         kubectl wait --for=delete namespace nightly --timeout=200s
   #         echo "✅ Nightly namespace deleted successfully"
-  #         echo "✅ All resources cleaned up successfully"
   #         echo "✅ Nightly deployment completed successfully"
