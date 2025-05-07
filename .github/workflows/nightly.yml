@@ -16,7 +16,28 @@ env:
   IMAGE_TAG: RC-${{ github.run_number }}
 
 jobs:
+  semantic-version:
+    runs-on: ubuntu-latest
+    outputs:
+        version: ${{ steps.calculate.outputs.version }}
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+        
+      - name: Calculate semantic version
+        id: calculate
+        uses: paulhatch/semantic-version@v5.4.0      
+        with:
+            tag_prefix: "v"
+      - name: Export VERSION
+        run: echo "VERSION=${{ steps.calculate.outputs.version }}" >> $GITHUB_ENV
+
   build-and-push:
+    needs: semantic-version
+    env:
+      IMAGE_TAG: ${{ needs.semver.outputs.version }}
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
     steps:
@@ -97,7 +118,7 @@ jobs:
             OLD_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
       
             if [[ "$NEW_HASH" == "$OLD_HASH" ]]; then
-              echo "✔️  $svc unchanged (hash: $NEW_HASH), skipping build and push."
+              echo "✅  $svc unchanged (hash: $NEW_HASH), skipping build and push."
               continue
             fi
       

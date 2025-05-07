@@ -1,9 +1,9 @@
 name: QA Pipeline
 
 on:
-#   workflow_run:
-#     workflows: ["Nightly Build & Deploy"]
-#     types: [completed]
+  workflow_run:
+    workflows: ["Nightly Build & Deploy"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       image_tag:
@@ -24,7 +24,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout infra repo
+        uses: actions/checkout@v3
 
       - name: Configure AWS creds
         uses: aws-actions/configure-aws-credentials@v4
