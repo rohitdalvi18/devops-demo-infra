@@ -37,7 +37,7 @@ jobs:
   build-and-push:
     needs: semantic-version
     env:
-      IMAGE_TAG: ${{ needs.semver.outputs.version }}
+      IMAGE_TAG: ${{ needs.semantic-version.outputs.version }}
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
     steps:
