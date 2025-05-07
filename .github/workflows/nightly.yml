@@ -133,9 +133,7 @@ jobs:
               echo " $svc unchanged (digest $LOCAL_DIGEST), skipping tag & push."
             else
               echo "🔄  $svc has been updated, tagging and pushing..."
-              docker tag $LOCAL_TAG $FINAL_TAG
               docker tag $LOCAL_TAG $REMOTE_URI
-              docker push $FINAL_TAG
               docker push $REMOTE_URI
             fi
           done
