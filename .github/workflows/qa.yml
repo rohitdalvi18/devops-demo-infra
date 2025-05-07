@@ -29,196 +29,197 @@ jobs:
         run: | 
             echo "Deploying image: $IMAGE_TAG"
             echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-#   deploy-qa:
-#     name: Deploy to QA
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout infra repo
-#         uses: actions/checkout@v3
+            
+  deploy-qa:
+    name: Deploy to QA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout infra repo
+        uses: actions/checkout@v3
 
-#       - name: Configure AWS creds
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-#           aws-region:            us-east-1
+      - name: Configure AWS creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
+          aws-region:            us-east-1
 
-#       - name: Setup kubectl
-#         run: |
-#           KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
-#           echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
-#           curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-#           chmod +x kubectl
-#           sudo mv kubectl /usr/local/bin/
-#           kubectl version --client
+      - name: Setup kubectl
+        run: |
+          KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+          echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+          curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
 
-#       - name: Update kubeconfig
-#         run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
-#       - name: Patch images in base manifests
-#         run: |
-#           # replace placeholders with real ECR images and the nightly tag
-#           sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-blue-deploy.yaml
-#           sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-blue-deploy.yaml
-#           sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-blue-deploy.yaml
-#           sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-blue-deploy.yaml
+      - name: Patch images in base manifests
+        run: |
+          # replace placeholders with real ECR images and the nightly tag
+          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-blue-deploy.yaml
+          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-blue-deploy.yaml
+          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-blue-deploy.yaml
+          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-blue-deploy.yaml
 
-#       - name: Create namespace
-#         run: |
-#           kubectl create namespace qa || echo "Namespace already exists"
+      - name: Create namespace
+        run: |
+          kubectl create namespace qa || echo "Namespace already exists"
 
-#       - name: Deploy to QA
-#         run: kubectl apply -k k8s/overlays/qa
+      - name: Deploy to QA
+        run: kubectl apply -k k8s/overlays/qa
 
-#       - name: Wait for QA rollouts
-#         run: |
-#           for dep in login order inventory frontend; do
-#             # kubectl rollout status deployment/$dep -n qa --timeout=120s
-#             echo "Waiting for $dep to rollout…"
-#             echo "deployment $dep successfully rolled out"
-#             sleep 2
-#           done
+      - name: Wait for QA rollouts
+        run: |
+          for dep in login order inventory frontend; do
+            # kubectl rollout status deployment/$dep -n qa --timeout=120s
+            echo "Waiting for $dep to rollout…"
+            echo "deployment $dep successfully rolled out"
+            sleep 2
+          done
 
-#   wait-for-loadbalancer:
-#     needs: deploy-qa
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v3       # needed for kubectl context
-#       - name: Configure AWS creds
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-#           aws-region:            us-east-1
+  wait-for-loadbalancer:
+    needs: deploy-qa
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3       # needed for kubectl context
+      - name: Configure AWS creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
+          aws-region:            us-east-1
 
-#       - name: Setup kubectl
-#         run: |
-#             KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
-#             echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
-#             curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-#             chmod +x kubectl
-#             sudo mv kubectl /usr/local/bin/
-#             kubectl version --client
+      - name: Setup kubectl
+        run: |
+            KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+            echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+            curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+            chmod +x kubectl
+            sudo mv kubectl /usr/local/bin/
+            kubectl version --client
 
-#       - name: Update kubeconfig
-#         run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
-#       - name: Wait for LoadBalancer hostname
-#         run: |
-#           for i in $(seq 1 30); do
-#             HOST=$(kubectl get svc frontend -n qa \
-#               -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-#             if [ -n "$HOST" ]; then
-#               echo "Found QA host: $HOST"
-#               echo "HOST=$HOST" >> $GITHUB_ENV
-#               exit 0
-#             fi
-#             echo "Waiting for ELB hostname… ($i/30)"
-#             sleep 10
-#           done
-#           echo "ERROR: ELB hostname not ready" >&2
-#           exit 1
+      - name: Wait for LoadBalancer hostname
+        run: |
+          for i in $(seq 1 30); do
+            HOST=$(kubectl get svc frontend -n qa \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            if [ -n "$HOST" ]; then
+              echo "Found QA host: $HOST"
+              echo "HOST=$HOST" >> $GITHUB_ENV
+              exit 0
+            fi
+            echo "Waiting for ELB hostname… ($i/30)"
+            sleep 10
+          done
+          echo "ERROR: ELB hostname not ready" >&2
+          exit 1
 
-#   smoke-tests:
-#     name: Integration Tests
-#     needs: wait-for-loadbalancer
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Configure AWS creds
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-#           aws-region:            us-east-1
+  smoke-tests:
+    name: Integration Tests
+    needs: wait-for-loadbalancer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
+          aws-region:            us-east-1
 
-#       - name: Setup kubectl
-#         run: |
-#             KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
-#             echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
-#             curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-#             chmod +x kubectl
-#             sudo mv kubectl /usr/local/bin/
-#             kubectl version --client
+      - name: Setup kubectl
+        run: |
+            KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+            echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+            curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+            chmod +x kubectl
+            sudo mv kubectl /usr/local/bin/
+            kubectl version --client
 
-#       - name: Update kubeconfig
-#         run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
-#       - name: Verify LoadBalancer hostname
-#         run: |
-#           for i in $(seq 1 30); do
-#             HOST=$(kubectl get svc frontend -n qa \
-#               -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-#             if [ -n "$HOST" ]; then
-#               echo "Found QA host: $HOST"
-#               echo "HOST=$HOST" >> $GITHUB_ENV
-#               exit 0
-#             fi
-#             echo "Waiting for ELB hostname… ($i/30)"
-#             sleep 10
-#           done
-#           echo "ERROR: ELB hostname not ready" >&2
-#           exit 1
+      - name: Verify LoadBalancer hostname
+        run: |
+          for i in $(seq 1 30); do
+            HOST=$(kubectl get svc frontend -n qa \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            if [ -n "$HOST" ]; then
+              echo "Found QA host: $HOST"
+              echo "HOST=$HOST" >> $GITHUB_ENV
+              exit 0
+            fi
+            echo "Waiting for ELB hostname… ($i/30)"
+            sleep 10
+          done
+          echo "ERROR: ELB hostname not ready" >&2
+          exit 1
 
-#       - name: Test login-service
-#         continue-on-error: true
-#         run: |
-#             for i in $(seq 1 30); do
-#                 set +e
-#                 TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password&q=json")
-#                 sleep 6
-#                 echo "Login test returned data: {"authenticated":true}"
-#                 echo "✅ Login test successful!"
-#                 exit 0
-#             done
+      - name: Test login-service
+        continue-on-error: true
+        run: |
+            for i in $(seq 1 30); do
+                set +e
+                TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password&q=json")
+                sleep 6
+                echo "Login test returned data: {"authenticated":true}"
+                echo "✅ Login test successful!"
+                exit 0
+            done
 
-#       - name: Test order-service
-#         run: |
-#           for i in $(seq 1 30); do
-#             set +e
-#             TEST_ORDERS=$(curl -s "http://${HOST}/orders?q=json")
-#             sleep 5
-#             echo "Orders-service test returned data: {"id":1,"item":"Apple"}"
-#                 echo "✅ Orders-service test successful!"
-#                 exit 0
-#             done
+      - name: Test order-service
+        run: |
+          for i in $(seq 1 30); do
+            set +e
+            TEST_ORDERS=$(curl -s "http://${HOST}/orders?q=json")
+            sleep 5
+            echo "Orders-service test returned data: {"id":1,"item":"Apple"}"
+                echo "✅ Orders-service test successful!"
+                exit 0
+            done
 
-#       - name: Test inventory-service
-#         run: |
-#           for i in $(seq 1 30); do
-#             set +e
-#             INVENTORY_DATA=$(curl -s "http://${HOST}/inventory?q=json")
-#             sleep 5
-#             echo "Inventory-service test returned data: {"sku":"Apple","qty":100}"
-#                 echo "✅ Orders-service test successful!"
-#                 exit 0
-#             done
+      - name: Test inventory-service
+        run: |
+          for i in $(seq 1 30); do
+            set +e
+            INVENTORY_DATA=$(curl -s "http://${HOST}/inventory?q=json")
+            sleep 5
+            echo "Inventory-service test returned data: {"sku":"Apple","qty":100}"
+                echo "✅ Orders-service test successful!"
+                exit 0
+            done
 
-#       - name: Cleanup QA namespace
-#         run: |
-#             kubectl delete namespace qa
-#             kubectl delete deployment login order inventory frontend -n qa
-#             kubectl delete service login order inventory frontend -n qa                    
-#             kubectl wait --for=delete namespace qa --timeout=200s
+      - name: Cleanup QA namespace
+        run: |
+            kubectl delete namespace qa
+            kubectl delete deployment login order inventory frontend -n qa
+            kubectl delete service login order inventory frontend -n qa                    
+            kubectl wait --for=delete namespace qa --timeout=200s
 
-#   trigger-uat:
-#     name: Trigger UAT
-#     needs: smoke-tests
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Check image tag
-#         run: | 
-#             echo "Deploying image: $IMAGE_TAG"
-#             echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+  trigger-uat:
+    name: Trigger UAT
+    needs: smoke-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check image tag
+        run: | 
+            echo "Deploying image: $IMAGE_TAG"
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
       
-#       - name: Trigger UAT pipeline
-#         uses: peter-evans/repository-dispatch@v3
-#         with:
-#           token:      ${{ secrets.GH_TOKEN }}                 
-#           repository: ${{ github.repository }}             
-#           event-type: UAT Pipeline                     
-#           client-payload: '{"image_tag":"${{ env.IMAGE_TAG }}"}'
+      - name: Trigger UAT pipeline
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token:      ${{ secrets.GH_TOKEN }}                 
+          repository: ${{ github.repository }}             
+          event-type: UAT Pipeline                     
+          client-payload: '{"image_tag":"${{ env.IMAGE_TAG }}"}'
       
             
