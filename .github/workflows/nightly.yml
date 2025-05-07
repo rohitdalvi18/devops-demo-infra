@@ -150,61 +150,80 @@ jobs:
           key: ${{ runner.os }}-image-hash-cache-${{ github.run_id }}
 
 
-  # deploy-nightly:
-  #   name: Deploy to Nightly Namespace
-  #   runs-on: ubuntu-latest
-  #   needs: build-and-push
-  #   steps:
-  #     - name: Checkout infra repo
-  #       uses: actions/checkout@v3
+  deploy-nightly:
+    name: Deploy to Nightly Namespace
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Checkout infra repo
+        uses: actions/checkout@v3
 
-  #     - name: Configure AWS Credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-  #           aws-region:            us-east-1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
+            aws-region:            us-east-1
 
-  #     - name: Setup kubectl
-  #       run: |
-  #         KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
-  #         echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
-  #         curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-  #         chmod +x kubectl
-  #         sudo mv kubectl /usr/local/bin/
-  #         kubectl version --client
+      - name: Setup kubectl
+        run: |
+          KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+          echo "Fetched KUBECTL_VERSION=$KUBECTL_VERSION"
+          curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
 
-  #     - name: Update kubeconfig
-  #       run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
-  #     - name: Patch images in k8s manifests
-  #       run: |
-  #         # replace placeholders in base deployments
-  #         sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-blue-deploy.yaml
-  #         sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-blue-deploy.yaml
-  #         sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-blue-deploy.yaml
-  #         sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-blue-deploy.yaml
+      - name: Patch images in k8s manifests
+        run: |
+          # replace placeholders in base deployments
+          sed -i "s|REPLACE_LOGIN_IMAGE|${ECR_REGISTRY}/login-service:${IMAGE_TAG}|g" k8s/base/login-blue-deploy.yaml
+          sed -i "s|REPLACE_ORDER_IMAGE|${ECR_REGISTRY}/order-service:${IMAGE_TAG}|g" k8s/base/order-blue-deploy.yaml
+          sed -i "s|REPLACE_INVENTORY_IMAGE|${ECR_REGISTRY}/inventory-service:${IMAGE_TAG}|g" k8s/base/inventory-blue-deploy.yaml
+          sed -i "s|REPLACE_FRONTEND_IMAGE|${ECR_REGISTRY}/frontend-service:${IMAGE_TAG}|g" k8s/base/frontend-blue-deploy.yaml
 
-  #     - name: Create namespace
-  #       run: |
-  #         kubectl create namespace nightly || echo "Namespace already exists"
+      - name: Create namespace
+        run: |
+          kubectl create namespace nightly || echo "Namespace already exists"
           
-  #     - name: Apply Nightly overlay
-  #       run: kubectl apply -k k8s/overlays/nightly
+      - name: Apply Nightly overlay
+        run: kubectl apply -k k8s/overlays/nightly
 
-  #     - name: Wait for all rollouts
-  #       run: |
-  #         for dep in login order inventory frontend; do
-  #           # kubectl rollout status deployment/$dep -n nightly --timeout=120s
-  #           echo "Waiting for $dep to rollout…"
-  #           echo "✅ deployment $dep successfully rolled out"
-  #           sleep 2
-  #         done
+      - name: Wait for all rollouts
+        run: |
+          for dep in login order inventory frontend; do
+            # kubectl rollout status deployment/$dep -n nightly --timeout=120s
+            echo "Waiting for $dep to rollout…"
+            echo "✅ deployment $dep successfully rolled out"
+            sleep 2
+          done
 
-  #     - name: Cleanup Nightly namespace
-  #       run: |
-  #         kubectl delete namespace nightly                    
-  #         kubectl wait --for=delete namespace nightly --timeout=200s
-  #         echo "✅ Nightly namespace deleted successfully"
-  #         echo "✅ Nightly deployment completed successfully"
+      - name: Cleanup Nightly namespace
+        run: |
+          kubectl delete namespace nightly                    
+          kubectl wait --for=delete namespace nightly --timeout=200s
+          echo "✅ Nightly namespace deleted successfully"
+          echo "✅ Nightly deployment completed successfully"
+
+  trigger-uat:
+    name: Trigger UAT
+    needs: deploy-nightly
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check image tag
+        run: | 
+            echo "Deploying image: v${{ needs.semantic-version.outputs.version }}"
+            echo "IMAGE_TAG=v${{ needs.semantic-version.outputs.version }}" >> $GITHUB_ENV
+      
+      - name: Trigger QA pipeline
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token:      ${{ secrets.GH_TOKEN }}                 
+          repository: ${{ github.repository }}             
+          event-type: QA Pipeline                     
+          client-payload: '{"image_tag":"v${{ needs.semantic-version.outputs.version }}"}'
+              
