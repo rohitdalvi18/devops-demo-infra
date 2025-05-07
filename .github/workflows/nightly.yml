@@ -109,44 +109,35 @@ jobs:
       - name: Build & Push Only Updated Services
         run: |
           SERVICES=(login-service order-service inventory-service frontend-service)
+          mkdir -p .image-hashes
+      
           for svc in "${SERVICES[@]}"; do
             CONTEXT="source/$svc"
+            HASH_FILE=".image-hashes/${svc}.sha256"
             LOCAL_TAG="${svc}:${IMAGE_TAG}"
             REMOTE_URI="${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
-
-            echo ">>> Building $LOCAL_TAG from $CONTEXT"
+      
+            echo ">>> Calculating stable checksum for $svc"
+            NEW_HASH=$(find "$CONTEXT" -type f ! -name '*.env' ! -name '*.DS_Store' -exec sha256sum {} + | sort -k 2 | sha256sum | awk '{print $1}')
+            OLD_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
+      
+            if [[ "$NEW_HASH" == "$OLD_HASH" ]]; then
+              echo "✅  $svc unchanged (hash: $NEW_HASH), skipping build and push."
+              continue
+            fi
+      
+            echo "🔄  Changes detected in $svc (new hash: $NEW_HASH), building and pushing..."
+            echo "$NEW_HASH" > "$HASH_FILE"
+      
             docker buildx build \
-              --quiet \
-              --output=type=docker \
+              --load \
               --cache-from=type=local,src=/tmp/.buildx-cache \
               --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
               -t $LOCAL_TAG \
               "$CONTEXT"
-
-            # Tag with ECR URI
+      
             docker tag $LOCAL_TAG $REMOTE_URI
-
-            # Get digest of the local image by pushing to a dummy ECR tag and capturing the digest
-            TEMP_PUSH_RESULT=$(docker push $REMOTE_URI 2>&1 | tee /tmp/pushlog.txt)
-            DIGEST=$(grep "digest:" /tmp/pushlog.txt | awk '{print $3}')
-
-            # Check if digest already exists remotely (meaning image is unchanged)
-            EXISTS=$(aws ecr list-images \
-              --region $AWS_REGION \
-              --repository-name $svc \
-              --filter "tagStatus=TAGGED" \
-              --query 'imageIds[?imageTag==`'"$IMAGE_TAG"'`]' \
-              --output text)
-
-            if [[ "$EXISTS" == *"$IMAGE_TAG"* ]]; then
-              echo "✔️  $svc already pushed, deleting new tag due to no content change."
-              aws ecr batch-delete-image \
-                --region $AWS_REGION \
-                --repository-name $svc \
-                --image-ids imageTag=$IMAGE_TAG
-            else
-              echo "✅  $svc updated, digest $DIGEST"
-            fi
+            docker push $REMOTE_URI
           done
       
       - name: Save updated hash cache
@@ -213,5 +204,4 @@ jobs:
   #         kubectl delete namespace nightly                    
   #         kubectl wait --for=delete namespace nightly --timeout=200s
   #         echo "✅ Nightly namespace deleted successfully"
-  #         echo "✅ Nightly deployment completed successfully"
   #         echo "✅ Nightly deployment completed successfully"
