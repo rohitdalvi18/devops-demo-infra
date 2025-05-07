@@ -19,7 +19,7 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   CLUSTER_NAME:   devops-demo
-  IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.image_tag || format('v{0}.{0}.{0}', github.event.workflow_run.run_number) }}
+  IMAGE_TAG: ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
 
 jobs:
   verify-image-tag:
