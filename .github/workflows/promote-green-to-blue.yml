@@ -101,6 +101,7 @@ jobs:
           done
   
   rollback-on-failure:
+    name: Trigger Rollback to Green on Failure
     needs: switch-to-blue
     if: ${{ failure() }}
     runs-on: ubuntu-latest

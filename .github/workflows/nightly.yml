@@ -3,9 +3,9 @@ name: Nightly Build & Deploy
 on:
 #   schedule:
 #     - cron: '0 2 * * *'      # every night at 02:00 UTC
-    push:
-      branches:
-        - main
+    # push:
+    #   branches:
+    #     - main
     workflow_dispatch:
 
 env:

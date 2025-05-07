@@ -167,7 +167,7 @@ jobs:
 
   trigger-uat:
     name: Trigger Green Pipeline
-    needs: deploy-uat
+    needs: uat-tests
     runs-on: ubuntu-latest
     steps:
       - name: Check image tag

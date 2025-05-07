@@ -56,6 +56,9 @@ jobs:
         run: |
           kubectl patch svc frontend -n prod \
             -p '{"spec":{"selector":{"app":"frontend","color":"green"}}}'
+          kubectl patch svc login -n prod -p '{"spec":{"selector":{"app":"login","color":"green"}}}'
+          kubectl patch svc order -n prod -p '{"spec":{"selector":{"app":"order","color":"green"}}}'
+          kubectl patch svc inventory -n prod -p '{"spec":{"selector":{"app":"inventory","color":"green"}}}'
 
       - name: Confirm endpoints
         run: |

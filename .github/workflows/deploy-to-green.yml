@@ -121,6 +121,9 @@ jobs:
         run: |
           kubectl apply -k k8s/overlays/prod/green
           kubectl patch svc frontend -n prod -p '{"spec":{"selector":{"app":"frontend","color":"green"}}}'
+          kubectl patch svc login -n prod -p '{"spec":{"selector":{"app":"login","color":"green"}}}'
+          kubectl patch svc order -n prod -p '{"spec":{"selector":{"app":"order","color":"green"}}}'
+          kubectl patch svc inventory -n prod -p '{"spec":{"selector":{"app":"inventory","color":"green"}}}'
 
       - name: Wait for Green Rollout
         run: |
@@ -139,4 +142,4 @@ jobs:
             token:      ${{ secrets.GH_TOKEN }}                 
             repository: ${{ github.repository }}             
             event-type: Promote Green to Blue                     
-            client-payload: '{"image_tag": "rc-1","img_tag": "$IMAGE_TAG"}'
+            client-payload: '{"image_tag": "rc-1","img_tag": "${{ env.IMAGE_TAG }}"}'
