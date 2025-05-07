@@ -26,6 +26,7 @@ jobs:
         with:
             repository: rohitdalvi18/devops-demo-source
             ref: main
+            token: ${{ secrets.GH_TOKEN }}
             fetch-depth: 0
         
       - name: Calculate semantic version
