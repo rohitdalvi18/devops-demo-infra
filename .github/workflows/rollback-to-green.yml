@@ -42,6 +42,9 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
+      - name: Clean up old Blue deployments
+        run: kubectl delete deploy -n prod -l color=blue 
+
       - name: Re-apply Green overlay
         run: |
           kubectl apply -k k8s/overlays/prod/green
@@ -62,5 +65,8 @@ jobs:
 
       - name: Confirm endpoints
         run: |
-          kubectl get endpoints frontend -n prod
-          echo "Rolled back to GREEN. Reason: ${{ github.event.inputs.reason }}"
+          #   kubectl get endpoints frontend -n prod
+          for svc in login-green order-green inventory-green frontend-green; do
+            kubectl rollout status deployment/$svc -n prod --timeout=300s
+          done
+          echo "Successfully Rolled back to GREEN. ${{ github.event.inputs.reason }}"
