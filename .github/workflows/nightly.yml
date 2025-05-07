@@ -153,7 +153,6 @@ jobs:
       
             docker tag $LOCAL_TAG $REMOTE_URI > /dev/null 2>&1
             docker push $REMOTE_URI > /dev/null 2>&1
-          done
       
       - name: Save updated hash cache
         uses: actions/cache@v4
