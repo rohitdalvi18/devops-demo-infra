@@ -5,7 +5,7 @@ on:
 #     workflows: ["Nightly Build & Deploy"]
 #     types: [completed]
   repository_dispatch:
-    types: [UAT Pipeline]
+    types: [QA Pipeline]
 
   workflow_dispatch:
     inputs:
