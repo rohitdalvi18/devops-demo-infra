@@ -221,10 +221,12 @@ jobs:
     #       echo "✅ Nightly namespace deleted successfully"
     #       echo "✅ Nightly deployment completed successfully"
 
-  trigger-uat:
-    name: Trigger UAT
+  trigger-qa:
+    name: Trigger QA Pipeline
     # needs: deploy-nightly
-    needs: build-and-push
+    needs:
+      - build-and-push
+      - semantic-version
     runs-on: ubuntu-latest
     steps:
       - name: Check image tag
