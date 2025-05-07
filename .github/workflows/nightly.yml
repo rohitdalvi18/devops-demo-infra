@@ -107,7 +107,7 @@ jobs:
             REMOTE_URI="${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
 
             echo ">>> Building $LOCAL_TAG from $CONTEXT"
-            docker buildx build \
+            docker buildx build --load -t \
               --cache-from=type=local,src=/tmp/.buildx-cache \
               --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
               -t $LOCAL_TAG $CONTEXT
