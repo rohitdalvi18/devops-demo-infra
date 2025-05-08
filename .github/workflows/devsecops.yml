@@ -19,11 +19,18 @@ jobs:
         with:
             repository: rohitdalvi18/devops-demo-source
             token: ${{ secrets.GH_TOKEN }}
+            path: source
+
+      # - name: Run Snyk on source code
+      #   run: |
+      #         cd source
+      #         snyk test --all-projects
 
       - name: Run Security Scans for login-service
         run: |
             # Install Snyk
             npm install -g snyk
+            cd source/login-service
             # Scan dependencies
             snyk test
             # Scan container
@@ -33,6 +40,7 @@ jobs:
         run: |
             # Install Snyk
             npm install -g snyk
+            cd source/order-service
             # Scan dependencies
             snyk test
             # Scan container
@@ -42,6 +50,7 @@ jobs:
         run: |
             # Install Snyk
             npm install -g snyk
+            cd source/inventory-service
             # Scan dependencies
             snyk test
             # Scan container
@@ -51,6 +60,7 @@ jobs:
         run: |
             # Install Snyk
             npm install -g snyk
+            cd source/payment-service
             # Scan dependencies
             snyk test
             # Scan container
