@@ -20,13 +20,15 @@ jobs:
             repository: rohitdalvi18/devops-demo-source
             token: ${{ secrets.GH_TOKEN }}
             path: source
-
+          
       # - name: Run Snyk on source code
       #   run: |
       #         cd source
       #         snyk test --all-projects
 
       - name: Run Security Scans for login-service
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
             # Install Snyk
             npm install -g snyk
@@ -37,6 +39,8 @@ jobs:
             snyk container test $ECR_REGISTRY/login-service:${IMAGE_TAG}
 
       - name: Run Security Scans for order-service
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
             # Install Snyk
             npm install -g snyk
@@ -47,6 +51,8 @@ jobs:
             snyk container test $ECR_REGISTRY/order-service:${IMAGE_TAG}
 
       - name: Run Security Scans for inventory-service
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
             # Install Snyk
             npm install -g snyk
@@ -57,6 +63,8 @@ jobs:
             snyk container test $ECR_REGISTRY/inventory-service:${IMAGE_TAG}
 
       - name: Run Security Scans for payment-service
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
             # Install Snyk
             npm install -g snyk
