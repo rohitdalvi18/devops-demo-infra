@@ -14,10 +14,10 @@ on:
           required: true
 
 env:
-  AWS_REGION:     us-east-1
+  AWS_REGION:     ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
-  CLUSTER_NAME:   devops-demo
+  ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+  CLUSTER_NAME:   ${{ secrets.CLUSTER_NAME }}
   IMAGE_TAG:      ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
 
 
@@ -42,7 +42,7 @@ jobs:
             aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
             aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
             aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-            aws-region:            us-east-1
+            aws-region:            ${{ secrets.AWS_REGION }}
         
 
       - name: Login to Amazon ECR
@@ -87,7 +87,7 @@ jobs:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-          aws-region:            us-east-1
+          aws-region:            ${{ secrets.AWS_REGION }}
 
       - name: Setup kubectl
         run: |
@@ -99,7 +99,7 @@ jobs:
             kubectl version --client
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${CLUSTER_NAME}
 
       - name: Patch Base Manifests for Green
         run: |
@@ -142,4 +142,4 @@ jobs:
             token:      ${{ secrets.GH_TOKEN }}                 
             repository: ${{ github.repository }}             
             event-type: Promote Green to Blue                     
-            client-payload: '{"image_tag": "${{ env.IMAGE_TAG }}-rc1","img_tag": "${{ env.IMAGE_TAG }}"}'
+            client-payload: '{"image_tag": "${{ env.IMAGE_TAG }}","img_tag": "${{ env.IMAGE_TAG }}"}'

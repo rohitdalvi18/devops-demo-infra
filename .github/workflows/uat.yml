@@ -20,10 +20,9 @@ permissions:
     issues: write
 
 env:
-  AWS_REGION:     us-east-1
+  AWS_REGION:     ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  AWS_DEFAULT_REGION: us-east-1
-  ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
   CLUSTER_NAME:   devops-demo
   IMAGE_TAG:      ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}-rc1
   IMAGE_VERSION: ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
@@ -74,7 +73,7 @@ jobs:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-          aws-region:            us-east-1
+          aws-region:            ${{ secrets.AWS_REGION }}
 
       - name: Setup kubectl
         run: |
@@ -122,7 +121,7 @@ jobs:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-          aws-region:            us-east-1
+          aws-region:            ${{ secrets.AWS_REGION }}
 
       - name: Setup kubectl
         run: |
@@ -136,29 +135,51 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
 
-      - name: UAT TEST - AUTH Endpoint verification
-        run: |
-          HOST=$(kubectl get svc login -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "UAT login is at http://afc8133c2928b4ae6a7ac5eef61eae29-385109937.us-east-1.elb.amazonaws.com/"
-          echo "✅ AUTH Endpoint verification successful!"
-
       - name: UAT TEST - Test frontend microservice
+        id: get-host
         run: |
           HOST=$(kubectl get svc frontend -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "UAT frontend is at http://a064e3bae79fb40dfa6b88883f5223e7-510321793.us-east-1.elb.amazonaws.com/"
-          echo "✅ Frontend microservice test successful!"
+          echo "UAT frontend is at http://$HOST"
+          echo "HOST=$HOST" >> $GITHUB_ENV
+
+      - name: UAT TEST - Auth Endpoint Verification
+        run: |
+          echo "Testing Auth Endpoint at http://$HOST/login"
+          RESPONSE=$(curl -s -w "\n%{http_code}" "http://$HOST/login?user=admin&pass=password")
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          STATUS=$(echo "$RESPONSE" | tail -n1)
+          echo "Status: $STATUS"
+          echo "Body: $BODY"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Auth endpoint failed with status $STATUS"
+            exit 1
+          fi
 
       - name: UAT TEST - Order List Render Check
         run: |
-          HOST=$(kubectl get svc order -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "UAT order is at http://a8bc2ad3bb4cd4b68b14d81568c3b124-1773469660.us-east-1.elb.amazonaws.com/"
-          echo "✅ Order List Render Check successful!"
+          echo "Testing Order List at http://$HOST/orders"
+          RESPONSE=$(curl -s -w "\n%{http_code}" "http://$HOST/orders")
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          STATUS=$(echo "$RESPONSE" | tail -n1)
+          echo "Status: $STATUS"
+          echo "Body: $BODY"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Order list endpoint failed with status $STATUS"
+            exit 1
+          fi
 
       - name: UAT TEST - Inventory Visibility Test
         run: |
-          HOST=$(kubectl get svc inventory -n uat -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "UAT inventory is at http://a4c1677b3b91340d7b76b65166b14351-505521191.us-east-1.elb.amazonaws.com/"
-          echo "✅ Inventory Visibility Test successful!"
+          echo "Testing Inventory at http://$HOST/inventory"
+          RESPONSE=$(curl -s -w "\n%{http_code}" "http://$HOST/inventory")
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          STATUS=$(echo "$RESPONSE" | tail -n1)
+          echo "Status: $STATUS"
+          echo "Body: $BODY"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Inventory endpoint failed with status $STATUS"
+            exit 1
+          fi
 
       - name: Cleanup UAT namespace
         run: |

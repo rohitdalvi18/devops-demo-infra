@@ -14,11 +14,11 @@ on:
         required: true
 
 env:
-  AWS_REGION:     us-east-1
+  AWS_REGION:     ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  AWS_DEFAULT_REGION: us-east-1
-  ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
-  CLUSTER_NAME:   devops-demo
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+  ECR_REGISTRY:   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+  CLUSTER_NAME:   ${{ secrets.CLUSTER_NAME }}
   IMAGE_TAG: ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}-rc1
   IMAGE_VERSION: ${{ github.event.client_payload.image_tag || github.event.inputs.image_tag }}
 
@@ -46,7 +46,7 @@ jobs:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-          aws-region:            us-east-1
+          aws-region:            ${{ secrets.AWS_REGION }}
 
       - name: Setup kubectl
         run: |
@@ -58,7 +58,7 @@ jobs:
           kubectl version --client
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${CLUSTER_NAME}
 
       - name: Patch images in base manifests
         run: |
@@ -95,7 +95,7 @@ jobs:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-          aws-region:            us-east-1
+          aws-region:            ${{ secrets.AWS_REGION }}
 
       - name: Setup kubectl
         run: |
@@ -107,7 +107,7 @@ jobs:
             kubectl version --client
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region us-east-1 --name ${CLUSTER_NAME}
+        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${CLUSTER_NAME}
 
       - name: Wait for LoadBalancer hostname
         run: |
@@ -136,7 +136,7 @@ jobs:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  
-          aws-region:            us-east-1
+          aws-region:            ${{ secrets.AWS_REGION }}
 
       - name: Setup kubectl
         run: |
@@ -167,38 +167,42 @@ jobs:
           exit 1
 
       - name: Test login-service
-        continue-on-error: true
         run: |
-            for i in $(seq 1 30); do
-                set +e
-                TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password&q=json")
-                sleep 6
-                echo "Login test returned data: {"authenticated":true}"
+          for i in {1..5}; do
+            TEST_RESULT=$(curl -s "http://${HOST}/login?user=admin&pass=password&q=json")
+            echo "Login test returned data: $TEST_RESULT"
+            if echo "$TEST_RESULT" | grep -q '{"authenticated":true}'; then
                 echo "✅ Login test successful!"
                 exit 0
-            done
+            fi
+            echo "⏳ Retrying login check... ($i/5)"
+            sleep 5
+          done
+
+          echo "❌ Login test failed!"
+          exit 1
 
       - name: Test order-service
         run: |
-          for i in $(seq 1 30); do
-            set +e
-            TEST_ORDERS=$(curl -s "http://${HOST}/orders?q=json")
-            sleep 5
-            echo 'Orders-service test returned data: [{"id":1,"item":"Apple"}, {"id":2,"item":"Banana"}, {"id":3,"item":"Mango"}'
-                echo "✅ Orders-service test successful!"
-                exit 0
-            done
+          TEST_ORDERS=$(curl -s "http://${HOST}/orders?q=json")
+          echo "Orders-service test returned data: $TEST_ORDERS"
+          if echo "$TEST_ORDERS" | grep -q '{"id":1,"item":"Apple"}'; then
+            echo "✅ Orders-service test successful!"
+          else
+            echo "❌ Orders-service test failed!"
+            exit 1
+          fi
 
       - name: Test inventory-service
         run: |
-          for i in $(seq 1 30); do
-            set +e
             INVENTORY_DATA=$(curl -s "http://${HOST}/inventory?q=json")
-            sleep 5
-            echo 'Inventory-service test returned data: [{"sku":"Apple","qty":100},{"sku":"Banana","qty":200},{"sku":"Mango","qty":300}]'
-                echo "✅ Orders-service test successful!"
-                exit 0
-            done
+            echo "Inventory-service test returned data: $INVENTORY_DATA"
+            if echo "$INVENTORY_DATA" | grep -q '{"sku":"Apple","qty":100}'; then
+              echo "✅ Inventory-service test successful!"
+            else
+              echo "❌ Inventory-service test failed!"
+              exit 1
+            fi
 
       - name: Cleanup QA namespace
         run: |
